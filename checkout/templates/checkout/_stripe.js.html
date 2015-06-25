@@ -1,0 +1,29 @@
+{% load staticfiles %}
+<script src="https://checkout.stripe.com/checkout.js"></script>
+<script>
+    var handler = StripeCheckout.configure({
+        email: '{{ email }}',
+        key: '{{ key }}',
+        image: '{% static 'project/stripe/128x128.png' %}',
+        token: function(token) {
+            // Use the token to create the charge with a server-side script.
+            // You can access the token ID with `token.id`
+            console.log(token);
+        }
+    });
+
+    $('#customButton').on('click', function(e) {
+        // Open Checkout with further options
+        handler.open({
+            name: '{{ name }}',
+            description: '{% for item in description %}{% if forloop.counter0 %}, {% endif %}{{ item }}{% endfor %}',
+            amount: {{ total }}
+        });
+        e.preventDefault();
+    });
+
+    // Close Checkout on page navigation
+    $(window).on('popstate', function() {
+        handler.close();
+    });
+</script>

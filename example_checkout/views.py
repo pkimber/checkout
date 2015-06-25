@@ -7,6 +7,8 @@ from django.views.generic import (
     UpdateView,
 )
 
+from braces.views import LoginRequiredMixin
+
 from base.view_utils import BaseMixin
 from checkout.views import (
     PAYMENT_PK,
@@ -65,7 +67,7 @@ class HomeView(ListView):
 #        return reverse('project.home')
 
 
-class StripeUpdateView(StripeMixin, BaseMixin, UpdateView):
+class StripeUpdateView(LoginRequiredMixin, StripeMixin, BaseMixin, UpdateView):
 
     model = SalesLedger
     form_class = ExampleCheckoutForm

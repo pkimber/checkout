@@ -1,14 +1,6 @@
 {% load staticfiles %}
 
 {% csrf_token %}
-<script
-  src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-  data-key="{{ key }}"
-  data-amount="{{ total }}"
-  data-currency="{{ currency }}"
-  data-name="{{ name }}"
-  data-email="{{ email }}"
-  data-description="{% for item in description %}{% if forloop.counter0 %}, {% endif %}{{ item }}{% endfor %}"
-  data-allow-remember-me="false"
-  data-image="{% static 'project/stripe/128x128.png' %}">
-</script>
+
+
+<button id="customButton">Purchase</button>

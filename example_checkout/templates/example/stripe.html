@@ -1,4 +1,4 @@
-{% extends "project/base.html" %}
+{% extends 'project/base.html' %}
 
 {% block sub_title %}
   Stripe
@@ -12,6 +12,18 @@
   <div class="pure-g">
     <div class="pure-u-1">
       <div class="l-box">
+        <form class="pure-form-stacked">
+          <fieldset>
+            <legend>Choose your checkout type:</legend>
+            <div class="pure-control-group">
+              {% for radio in form.choices %}
+                {{ radio }}
+              {% endfor %}
+            </div>
+          </fieldset>
+        </form>
+      </div>
+      <div class="l-box">
         <form action="" method="POST">
           {% include 'checkout/_form_stripe.html' %}
         </form>
@@ -19,3 +31,7 @@
     </div>
   </div>
 {% endblock %}
+
+{% block script_extra %}
+  {% include 'checkout/_stripe.js.html' %}
+{% endblock script_extra %}
