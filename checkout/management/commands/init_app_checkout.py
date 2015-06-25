@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 
 class Command(BaseCommand):
 
-    help = "Initialise 'pay' application"
+    help = "Initialise 'checkout' application"
 
     def handle(self, *args, **options):
-        print("Initialised 'pay' app...")
+        print("Initialised 'checkout' app...")

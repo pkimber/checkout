@@ -15,7 +15,7 @@ from stock.models import (
 
 class Command(BaseCommand):
 
-    help = "Create demo data for 'pay'"
+    help = "Create demo data for 'checkout'"
 
     def handle(self, *args, **options):
         vat_settings = VatSettings()
@@ -34,4 +34,4 @@ class Command(BaseCommand):
         SalesLedger.objects.create_sales_ledger(
             'test@pkimber.net', 'Andi', pencil, 1
         )
-        print("Created 'pay' demo data...")
+        print("Created 'checkout' demo data...")
