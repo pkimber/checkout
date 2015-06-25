@@ -1,0 +1,57 @@
+{% extends 'checkout/base.html' %}
+{% load staticfiles %}
+
+{% block sub_title %}
+  Example - Payment detail
+{% endblock sub_title %}
+
+{% block sub_heading %}
+  Example - Payment detail
+{% endblock sub_heading %}
+
+{% block content %}
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <div class="l-box">
+        <div class="pure-menu pure-menu-open pure-menu-horizontal">
+          <ul>
+            <li>
+              <a href="{% url 'project.home' %}">
+                Home
+              </a>
+            </li>
+          </ul>
+        </div>
+        <table class="pure-table pure-table-bordered">
+          <tbody>
+            <tr valign="top">
+              <td>ID</td>
+              <td>{{ object.pk }}</td>
+            </tr>
+            <tr valign="top">
+              <td>Name</td>
+              <td>{{ object.name }}</td>
+            </tr>
+            <tr valign="top">
+              <td>Title</td>
+              <td>{{ object.title }}</td>
+            </tr>
+            <tr valign="top">
+              <td>State</td>
+              <td><strong>{{ object.state.name }}</strong></td>
+            </tr>
+            <tr valign="top">
+              <td>Quantity</td>
+              <td>{{ object.quantity }}</td>
+            </tr>
+            <tr valign="top">
+              <td>Price</td>
+              <td>{{ object.price }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+

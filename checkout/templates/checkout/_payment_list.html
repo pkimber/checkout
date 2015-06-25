@@ -1,0 +1,83 @@
+<table class="pure-table pure-table-bordered" width="100%">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Customer</th>
+      <th>Description</th>
+      <th>Net</th>
+      <th>VAT</th>
+      <th>Total</th>
+      <th>State</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for o in payment_list %}
+      <tr valign="top">
+        <td>
+          <small>
+            {{ o.created|date:'d/m/Y' }}
+            <br />
+            {{ o.created|date:'H:i' }}
+          </small>
+        </td>
+        <td>
+          {% if o.content_object_url %}
+            <a href="{{ o.content_object_url }}">
+              {{ o.name }}
+            </a>
+          {% else %}
+            {{ o.name }}
+          {% endif %}
+          <br />
+          <small>
+            <a href="mailto:{{ o.email }}">
+              {{ o.email }}
+            </a>
+          </small>
+        </td>
+        <td>
+          <small>
+            {% for line in o.paymentline_set.all %}
+              {{ line.quantity_normalize }} @ {{ line.save_price }}
+              {{ line.product.name|truncatechars:30 }}
+              <br />
+            {% endfor %}
+          </small>
+        </td>
+        <td align="right">
+          <small>
+            {% for line in o.paymentline_set.all %}
+              {{ line.net }}
+              <br />
+            {% endfor %}
+          </small>
+        </td>
+        <td align="right">
+          <small>
+            {% for line in o.paymentline_set.all %}
+              {{ line.vat }}
+              <br />
+            {% endfor %}
+          </small>
+        </td>
+        <td align="right">
+          <small>
+            {% for line in o.paymentline_set.all %}
+              {{ line.gross }}
+              <br />
+            {% endfor %}
+          </small>
+          <strong>
+            {{ o.total }}
+          </strong>
+        </td>
+        <td>
+          {% if o.is_payment_failed %}
+            <i class="fa fa-warning"></i>
+          {% endif %}
+          {{ o.state.name }}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

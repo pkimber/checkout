@@ -1,0 +1,9 @@
+recursive-include pay/static *
+recursive-include pay/templates *
+
+include LICENSE
+include README
+include requirements/*.txt
+include *.txt
+
+prune example_checkout/

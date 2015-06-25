@@ -1,0 +1,63 @@
+{% extends 'checkout/base.html' %}
+{% load staticfiles %}
+
+{% block sub_title %}
+  Example app
+{% endblock sub_title %}
+
+{% block sub_heading %}
+  Example app
+{% endblock sub_heading %}
+
+{% block content %}
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <div class="l-box">
+        <div class="pure-menu pure-menu-horizontal">
+          <ul class="pure-menu-list">
+            <li class="pure-menu-item">
+              <a href="{% url 'admin:finance_vatsettings_add' %}" class="pure-menu-link">
+                VAT Settings (admin only)
+              </a>
+            </li>
+            <li class="pure-menu-item">
+              <a href="{% url 'pay.list' %}" class="pure-menu-link">
+                Payments
+              </a>
+            </li>
+          </ul>
+        </div>
+        <table class="pure-table pure-table-bordered">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in object_list %}
+              <tr valign="top">
+                <td>{{ p.description }}</td>
+                <td>{{ p.product.name }}</td>
+                <td>{{ p.product.price }}</td>
+                <td>{{ p.quantity }}</td>
+                <td><strong>{{ p.checkout_state.name }}</strong></td>
+                <td>
+                  {% if p.can_pay %}
+                    <a href="{% url 'example.stripe.update' p.pk %}">
+                      Checkout
+                    </a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock content %}

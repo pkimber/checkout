@@ -1,0 +1,33 @@
+{% extends 'checkout/base.html' %}
+
+{% block sub_title %}
+  Example Checkout
+{% endblock sub_title %}
+
+{% block sub_heading %}
+  Example Checkout
+{% endblock sub_heading %}
+
+{% block content %}
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <div class="l-box">
+        <table class="pure-table pure-table-bordered">
+          <tbody>
+            <tr valign="top">
+              <td>Sales ledger</td>
+              <td>{{ object.title }}</td>
+            </tr>
+            <tr valign="top">
+              <td>Payment state</td>
+              <td><strong>{{ object.payment_state }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="l-box">
+        {% include '_form.html' with legend='Pay' submit='Pay' %}
+      </div>
+    </div>
+  </div>
+{% endblock content %}
