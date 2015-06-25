@@ -12,21 +12,7 @@
   <div class="pure-g">
     <div class="pure-u-1">
       <div class="l-box">
-        <form class="pure-form-stacked">
-          <fieldset>
-            <legend>Choose your checkout type:</legend>
-            <div class="pure-control-group">
-              {% for radio in form.choices %}
-                {{ radio }}
-              {% endfor %}
-            </div>
-          </fieldset>
-        </form>
-      </div>
-      <div class="l-box">
-        <form action="" method="POST">
-          {% include 'checkout/_form_stripe.html' %}
-        </form>
+        {% include '_form.html' with form_id='id_checkout_form' %}
       </div>
     </div>
   </div>

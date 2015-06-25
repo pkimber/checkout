@@ -1,0 +1,14 @@
+{% load staticfiles %}
+
+
+<form id="id_checkout_form" action="" method="POST">
+  {% csrf_token %}
+  {% for hidden in form.hidden_fields %}
+    {{ hidden }}
+  {% endfor %}
+  <div class="pure-controls">
+    <p>
+      <input type="submit" value="Checkout" class="pure-button pure-button-primary" />
+    </p>
+  </div>
+</form>

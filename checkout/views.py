@@ -192,10 +192,17 @@ class StripeMixin(object):
         ))
         return context
 
+    def form_invalid(self, form):
+        import ipdb
+        ipdb.set_trace()
+        print("Remove this later")
+
     def form_valid(self, form):
+        import ipdb
+        ipdb.set_trace()
         self.object = form.save(commit=False)
         # Create the charge on Stripe's servers - this will charge the users card
-        token = form.cleaned_data['stripeToken']
+        token = form.cleaned_data['token']
         self.object.save_token(token)
         # Set your secret key: remember to change this to your live secret key
         # in production.  See your keys here https://manage.stripe.com/account
