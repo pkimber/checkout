@@ -27,6 +27,7 @@ from mail.tasks import process_mail
 from .forms import CheckoutForm
 from .models import (
     Checkout,
+    CheckoutAction,
     Customer,
     log_stripe_error,
 )
@@ -74,7 +75,7 @@ def _check_perm(request, payment):
         raise PermissionDenied('Valid payment check failed.')
 
 
-def _log_card_error(e, payment_pk):
+def _log_card_error(e, checkout_pk):
     logger.error(
         'CardError\n'
         'payment: {}\n'
@@ -82,7 +83,7 @@ def _log_card_error(e, payment_pk):
         'code: {}\n'
         'http body: {}\n'
         'http status: {}'.format(
-            payment_pk,
+            checkout_pk,
             e.param,
             e.code,
             e.http_body,
@@ -94,21 +95,23 @@ def _log_card_error(e, payment_pk):
 def _notify_admin(checkout, description, request):
     email_addresses = [n.email for n in Notify.objects.all()]
     if email_addresses:
-        subject, message = payment.mail_subject_and_message(request)
         caption = checkout.action.name
-        subject = '{} from {}'.format(caption.capitalize(), checkout.customer.name)
+        subject = '{} from {}'.format(
+            caption.capitalize(),
+            checkout.customer.name,
+        )
         message = '{} - {} from {}, {}:'.format(
-            self.created.strftime('%d/%m/%Y %H:%M'),
+            checkout.created.strftime('%d/%m/%Y %H:%M'),
             caption,
             checkout.customer.name,
             checkout.customer.email,
         )
         message = message + '\n\n{}\n\n{}'.format(
             description,
-            request.build_absolute_uri(self.content_object.get_absolute_url()),
+            request.build_absolute_uri(checkout.content_object_url),
         )
         queue_mail_message(
-            payment,
+            checkout,
             email_addresses,
             subject,
             message,
@@ -195,17 +198,19 @@ class StripeMixin(object):
         # Create the charge on Stripe's servers - this will charge the users card
         token = form.cleaned_data['token']
         # self.object.save_token(token)
+        action = CheckoutAction.objects.payment
         # Set your secret key: remember to change this to your live secret key
         # in production.  See your keys here https://manage.stripe.com/account
         stripe.api_key = settings.STRIPE_SECRET_KEY
         try:
             # create a checkout request
             # checkout = self.object.checkout(token)
-            checkout = self.object.create_checkout(
-                self.object.checkout_name,
-                self.object.checkout_email,
-                token,
-                self.object,
+            checkout = Checkout.objects.create_checkout(
+                action=action,
+                name=self.object.checkout_name,
+                email=self.object.checkout_email,
+                token=token,
+                content_object=self.object,
             )
 
             # checkout.token = token
@@ -217,6 +222,7 @@ class StripeMixin(object):
             #     token
             # )
             description = ', '.join(self.object.checkout_description)
+            print(description)
             if checkout.payment:
                 checkout.total = self.object.checkout_total
                 checkout.save()
@@ -228,8 +234,7 @@ class StripeMixin(object):
                 )
             with transaction.atomic():
                 #self.object.set_checkout_state(CheckoutState.objects.success)
-                checkout.success
-                url = self.object.checkout_success
+                url = checkout.success
                 _notify_admin(checkout, description, self.request)
             # this should now be done by the object in 'checkout_success'
             # queue_mail_template(
@@ -240,14 +245,14 @@ class StripeMixin(object):
             process_mail.delay()
             result = super().form_valid(form)
         except stripe.CardError as e:
-            url = self.object.checkout_failure
+            url = checkout.fail
             # self.object.set_payment_failed()
-            _log_card_error(e, self.object.pk)
+            _log_card_error(e, self.checkout.pk)
             result = HttpResponseRedirect(url)
         except stripe.StripeError as e:
-            url = self.object.checkout_failure
+            url = checkout.fail
             # self.object.set_payment_failed()
-            log_stripe_error(logger, e, 'payment: {}'.format(self.object.pk))
+            log_stripe_error(logger, e, 'checkout: {}'.format(self.checkout.pk))
             result = HttpResponseRedirect(url)
         return result
 

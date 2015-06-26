@@ -30,28 +30,24 @@
         <table class="pure-table pure-table-bordered">
           <thead>
             <tr>
-              <th>Title</th>
+              <th>Name</th>
               <th>Product</th>
               <th>Price</th>
               <th>Quantity</th>
-              <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {% for p in object_list %}
               <tr valign="top">
-                <td>{{ p.description }}</td>
+                <td>{{ p.name }}</td>
                 <td>{{ p.product.name }}</td>
                 <td>{{ p.product.price }}</td>
                 <td>{{ p.quantity }}</td>
-                <td><strong>{{ p.checkout_state.name }}</strong></td>
                 <td>
-                  {% if p.can_pay %}
-                    <a href="{% url 'example.stripe.update' p.pk %}">
-                      Checkout
-                    </a>
-                  {% endif %}
+                  <a href="{% url 'example.stripe.update' p.pk %}">
+                    Checkout
+                  </a>
                 </td>
               </tr>
             {% endfor %}

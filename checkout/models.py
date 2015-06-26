@@ -193,11 +193,11 @@ reversion.register(Customer)
 
 class CheckoutManager(models.Manager):
 
-    def create_checkout(self, name, email, token, content_object):
+    def create_checkout(self, action, name, email, token, content_object):
         """Create a checkout payment request."""
         customer = Customer.objects.init_customer(name, email, token)
         obj = self.model(
-            CheckoutAction.objects.payment,
+            action=action,
             content_object=content_object,
             customer=customer,
         )
@@ -244,6 +244,12 @@ class Checkout(TimeStampedModel):
             return None
 
     @property
+    def fail(self):
+        self.state == CheckoutState.objects.fail
+        self.save()
+        return self.content_object.checkout_fail
+
+    @property
     def payment(self):
         return self.action == CheckoutAction.objects.payment
 
@@ -251,6 +257,7 @@ class Checkout(TimeStampedModel):
     def success(self):
         self.state == CheckoutState.objects.success
         self.save()
+        return self.content_object.checkout_success
 
     #@property
     #def description(self):

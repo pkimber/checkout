@@ -21,10 +21,10 @@ from stock.models import Product
 
 class SalesLedgerManager(models.Manager):
 
-    def create_sales_ledger(self, email, description, product, quantity):
+    def create_sales_ledger(self, name, email, product, quantity):
         obj = self.model(
+            name=name,
             email=email,
-            description=description,
             product=product,
             quantity=quantity,
         )
@@ -37,7 +37,6 @@ class SalesLedger(models.Model):
 
     name = models.CharField(max_length=100)
     email = models.EmailField()
-    description = models.CharField(max_length=100)
     product = models.ForeignKey(Product)
     quantity = models.IntegerField()
     # checkout_state = models.ForeignKey(
@@ -105,7 +104,12 @@ class SalesLedger(models.Model):
 
     @property
     def checkout_description(self):
-        return [self.description]
+        result = '{} x {} @ {}'.format(
+            self.product.name,
+            self.quantity,
+            self.product.price,
+        )
+        return [result]
 
     @property
     def checkout_email(self):
