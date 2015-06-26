@@ -8,7 +8,6 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponseRedirect
-#from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
 from braces.views import (
@@ -19,40 +18,18 @@ from braces.views import (
 from base.view_utils import BaseMixin
 from mail.tasks import process_mail
 
-from .forms import CheckoutForm
 from .models import (
     Checkout,
     CheckoutAction,
     Customer,
     log_stripe_error,
 )
-#from .service import (
-#    PAYMENT_LATER,
-#    PAYMENT_THANKYOU,
-#)
 
 
 CURRENCY = 'GBP'
 CHECKOUT_PK = 'payment_pk'
 
 logger = logging.getLogger(__name__)
-
-#class PayPalFormView(LoginRequiredMixin, BaseMixin, FormView):
-#
-#    form_class = PayPalPaymentsForm
-#    template_name = 'pay/paypal.html'
-#
-#    def get_initial(self):
-#        return dict(
-#            business=settings.PAYPAL_RECEIVER_EMAIL,
-#            amount='10.01',
-#            currency_code='GBP',
-#            item_name='Cycle Routes around Hatherleigh',
-#            invoice='0001',
-#            notify_url="https://www.example.com" + reverse('paypal-ipn'),
-#            return_url="https://www.example.com/your-return-location/",
-#            cancel_return="https://www.example.com/your-cancel-location/",
-#        )
 
 
 def _check_perm(request, payment):
@@ -87,23 +64,6 @@ def _log_card_error(e, checkout_pk):
     )
 
 
-
-#@require_POST
-#def pay_later_view(request, pk):
-#    payment = Payment.objects.get(pk=pk)
-#    _check_perm(request, payment)
-#    payment.check_can_pay
-#    payment.set_pay_later()
-#    queue_mail_template(
-#        payment,
-#        payment.mail_template_name,
-#        payment.mail_template_context(),
-#    )
-#    _send_notification_email(payment, request)
-#    process_mail.delay()
-#    return HttpResponseRedirect(payment.url)
-
-
 class CheckoutAuditListView(
         LoginRequiredMixin, StaffuserRequiredMixin,
         BaseMixin, ListView):
@@ -136,9 +96,6 @@ class CheckoutListView(
 
 class StripeMixin(object):
 
-    #form_class = CheckoutForm
-    #model = Checkout
-
     def _init_customer(self, email, description, token):
         """Make sure a stripe customer is created and update card (token)."""
         return Customer.objects.init_customer(email, description, token)
@@ -160,16 +117,9 @@ class StripeMixin(object):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        # Create the charge on Stripe's servers - this will charge the users card
         token = form.cleaned_data['token']
-        # self.object.save_token(token)
         action = CheckoutAction.objects.payment
-        # Set your secret key: remember to change this to your live secret key
-        # in production.  See your keys here https://manage.stripe.com/account
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         try:
-            # create a checkout request
-            # checkout = self.object.checkout(token)
             checkout = Checkout.objects.create_checkout(
                 action=action,
                 name=self.object.checkout_name,
@@ -178,18 +128,11 @@ class StripeMixin(object):
                 token=token,
                 content_object=self.object,
             )
-
-            # checkout.token = token
-            # checkout.save()
-            # # initialise the customer
-            # customer = self._init_customer(
-            #     checkout.email,
-            #     checkout.description,
-            #     token
-            # )
             if checkout.payment:
                 checkout.total = self.object.checkout_total
                 checkout.save()
+                # Create the charge on stripe's servers
+                stripe.api_key = settings.STRIPE_SECRET_KEY
                 stripe.Charge.create(
                     amount=self.as_pennies(checkout.total), # pennies
                     currency=CURRENCY,
@@ -197,24 +140,15 @@ class StripeMixin(object):
                     description=checkout.description,
                 )
             with transaction.atomic():
-                #self.object.set_checkout_state(CheckoutState.objects.success)
                 url = checkout.success(self.request)
-            # this should now be done by the object in 'checkout_success'
-            # queue_mail_template(
-            #     self.object,
-            #     self.object.mail_template_name,
-            #     self.object.mail_template_context(),
-            # )
             process_mail.delay()
             result = super().form_valid(form)
         except stripe.CardError as e:
             url = checkout.fail(self.request)
-            # self.object.set_payment_failed()
             _log_card_error(e, self.checkout.pk)
             result = HttpResponseRedirect(url)
         except stripe.StripeError as e:
             url = checkout.fail(self.request)
-            # self.object.set_payment_failed()
             log_stripe_error(logger, e, 'checkout: {}'.format(self.checkout.pk))
             result = HttpResponseRedirect(url)
         return result

@@ -1,12 +1,7 @@
 # -*- encoding: utf-8 -*-
-from django.core.urlresolvers import reverse
-
 from base.tests.model_maker import clean_and_save
 
-from checkout.models import (
-    CheckoutError,
-    CheckoutState,
-)
+from checkout.models import CheckoutError
 
 
 def check_checkout(model_instance):

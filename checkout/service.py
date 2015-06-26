@@ -1,8 +1,4 @@
 # -*- encoding: utf-8 -*-
-from django.conf import settings
-
-from mail.models import MailTemplate
-
 
 # slug for the email template
 #PAYMENT_LATER = 'payment_later'

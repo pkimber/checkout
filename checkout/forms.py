@@ -7,22 +7,6 @@ from .models import (
 )
 
 
-#class PayLaterForm(forms.ModelForm):
-#
-#    class Meta:
-#        model = Payment
-#        fields = ()
-
-
-#class CheckoutForm(forms.ModelForm):
-#
-#    stripeToken = forms.CharField()
-#
-#    class Meta:
-#        model = Checkout
-#        fields = ()
-
-
 CHECKOUT_ACTIONS = (
     (CheckoutAction.PAYMENT, 'Pay Now'),
     (CheckoutAction.PAYMENT_PLAN, 'Payment Plan'),

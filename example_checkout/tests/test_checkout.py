@@ -15,10 +15,7 @@ from checkout.models import (
     CheckoutError,
     CheckoutState,
 )
-from checkout.tests.factories import (
-    CheckoutFactory,
-    #PaymentLineFactory,
-)
+from checkout.tests.factories import CheckoutFactory
 from stock.tests.factories import ProductFactory
 
 from example_checkout.models import SalesLedger
@@ -155,7 +152,6 @@ from example_checkout.tests.factories import SalesLedgerFactory
 @pytest.mark.django_db
 def test_no_content_object():
     """Payments must be linked to a content object."""
-    #VatSettingsFactory()
     with pytest.raises(IntegrityError):
         CheckoutFactory()
 

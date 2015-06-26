@@ -1,28 +1,16 @@
 # -*- encoding: utf-8 -*-
 import logging
 
-from decimal import Decimal
-
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils import timezone
 
 import reversion
 import stripe
 
 from base.model_utils import TimeStampedModel
-from finance.models import (
-    legacy_vat_code,
-    VatCode,
-)
 from mail.models import Notify
-from mail.service import (
-    queue_mail_message,
-    queue_mail_template,
-)
-from stock.models import Product
+from mail.service import queue_mail_message
 
 
 logger = logging.getLogger(__name__)
@@ -246,8 +234,6 @@ class Checkout(TimeStampedModel):
 
     class Meta:
         ordering = ('pk',)
-        # payment should only link to one other object.
-        # unique_together = ('object_id', 'content_type')
         verbose_name = 'Checkout'
         verbose_name_plural = 'Checkouts'
 
@@ -297,13 +283,13 @@ class Checkout(TimeStampedModel):
             return None
 
     @property
-    def fail(self):
+    def fail(self, request):
         """Checkout failed - so update and notify admin."""
         self._success_or_fail(CheckoutState.objects.fail, request)
         return self.content_object.checkout_fail
 
     @property
-    def failed(self, request):
+    def failed(self):
         """Did the checkout request fail?"""
         return self.state == CheckoutState.objects.fail
 
@@ -316,151 +302,5 @@ class Checkout(TimeStampedModel):
         """Checkout successful - so update and notify admin."""
         self._success_or_fail(CheckoutState.objects.success, request)
         return self.content_object.checkout_success
-
-
-    #@property
-    #def description(self):
-    #    result = []
-    #    for line in self.paymentline_set.all():
-    #        s = ''
-    #        quantity = line.quantity_normalize
-    #        if quantity > 1:
-    #            s = s + '{} x '.format(quantity)
-    #        s = s + '{} (£{:.2f}'.format(
-    #            line.product.name,
-    #            line.net,
-    #        )
-    #        if line.vat:
-    #            s = s + ' + £{:.2f} vat'.format(line.vat)
-    #        s = s + ')'
-    #        result.append(s)
-    #    return result
-
-    #def _set_payment_state(self, payment_state):
-    #    """Mirror payment state to content object (to make queries easy)."""
-    #    self.state = payment_state
-    #    self.save()
-    #    # this method should set the state and save the data
-    #    self.content_object.set_payment_state(payment_state)
-
-    #@property
-    #def total(self):
-    #    result = Decimal()
-    #    for line in self.paymentline_set.all():
-    #        result = result + line.gross
-    #    return result
-
-    #@property
-    #def check_can_pay(self):
-    #   """Probably don't need this method as we won't create this record until
-    #   the payment is complete.
-    #   """
-    #    allowed = (PaymentState.DUE, PaymentState.FAIL, PaymentState.LATER)
-    #    if not self.state.slug in allowed:
-    #        raise PayError(
-    #            "Cannot pay this transaction (it did not fail and is not due "
-    #            "now or later) [{}, '{}']".format(self.pk, self.state.slug)
-    #        )
-    #    td = timezone.now() - self.created
-    #    diff = td.days * 1440 + td.seconds / 60
-    #    if abs(diff) > 60:
-    #        raise PayError(
-    #            "Cannot pay this transaction.  It is too old "
-    #            "(or has travelled in time, {} {} {}).".format(
-    #                self.created.strftime('%d/%m/%Y %H:%M'),
-    #                timezone.now().strftime('%d/%m/%Y %H:%M'),
-    #                abs(diff),
-    #            )
-    #        )
-
-    #def check_can_pay_later(self):
-    #    if not self.state.slug in (PaymentState.FAIL, PaymentState.LATER):
-    #        raise PayError(
-    #            'Cannot pay this transaction (it is not due to '
-    #            'be paid later or failed) [{}]'.format(self.pk)
-    #        )
-
-    #def get_next_line_number(self):
-    #    try:
-    #        self.line_number = self.line_number
-    #    except AttributeError:
-    #        self.line_number = 1
-    #    while(True):
-    #        try:
-    #            self.paymentline_set.get(line_number=self.line_number)
-    #        except PaymentLine.DoesNotExist:
-    #            break
-    #        self.line_number = self.line_number + 1
-    #    return self.line_number
-
-    #@property
-    #def is_paid(self):
-    #    return self.state.slug == PaymentState.PAID
-
-    #@property
-    #def is_pay_later(self):
-    #    return self.state.slug == PaymentState.LATER
-
-    #@property
-    #def is_payment_failed(self):
-    #    return self.state.slug == PaymentState.FAIL
-
-    #def mail_subject_and_message(self, request):
-    #    if self.is_paid:
-    #        caption = 'payment received'
-    #    elif self.is_pay_later:
-    #        caption = 'request to pay by payment plan (or cheque)'
-    #    else:
-    #        caption = 'unknown request'
-    #    subject = '{} from {}'.format(caption.capitalize(), self.name)
-    #    message = '{} - {} from {}, {}:'.format(
-    #        self.created.strftime('%d/%m/%Y %H:%M'),
-    #        caption,
-    #        self.name,
-    #        self.email,
-    #    )
-    #    message = message + '\n\n{}\n\n{}'.format(
-    #        ', '.join(self.description),
-    #        request.build_absolute_uri(self.content_object.get_absolute_url()),
-    #    )
-    #    return subject, message
-
-    #def mail_template_context(self):
-    #    return {
-    #        self.email: dict(
-    #            description=', '.join(self.description),
-    #            name=self.name,
-    #            total='£{:.2f}'.format(self.total),
-    #        ),
-    #    }
-
-    #@property
-    #def mail_template_name(self):
-    #    """Ask the content object which mail template to use.
-
-    #    The 'payment_state' can be 'PaymentState.PAID' or 'PaymentState.LATER'
-
-    #    """
-    #    return self.content_object.mail_template_name
-
-    #def save_token(self, token):
-    #    self.check_can_pay
-    #    self.token = token
-    #    self.save()
-
-    #def set_paid(self):
-    #    payment_state = PaymentState.objects.get(slug=PaymentState.PAID)
-    #    self._set_payment_state(payment_state)
-
-    #def set_payment_failed(self):
-    #    payment_state = PaymentState.objects.get(slug=PaymentState.FAIL)
-    #    self._set_payment_state(payment_state)
-
-    #def set_pay_later(self):
-    #    payment_state = PaymentState.objects.get(slug=PaymentState.LATER)
-    #    self._set_payment_state(payment_state)
-
-    #def total_as_pennies(self):
-    #    return int(self.total * Decimal('100'))
 
 reversion.register(Checkout)
