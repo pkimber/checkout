@@ -209,11 +209,8 @@ class CheckoutManager(models.Manager):
     def audit(self):
         return self.model.objects.all().order_by('-pk')
 
-    def payments(self):
-        return self.audit().filter(
-            action=CheckoutAction.objects.payment,
-            state=CheckoutState.objects.success,
-        )
+    def success(self):
+        return self.audit().filter(state=CheckoutState.objects.success)
 
 
 class Checkout(TimeStampedModel):

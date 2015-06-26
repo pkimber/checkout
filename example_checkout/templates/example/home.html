@@ -22,7 +22,8 @@
             </li>
             <li class="pure-menu-item">
               <a href="{% url 'checkout.list' %}" class="pure-menu-link">
-                Payments
+                <i class="fa fa-shopping-cart"></i>
+                Checkout
               </a>
             </li>
           </ul>
@@ -46,6 +47,7 @@
                 <td>{{ p.quantity }}</td>
                 <td>
                   <a href="{% url 'example.stripe.update' p.pk %}">
+                    <i class="fa fa-shopping-cart"></i>
                     Checkout
                   </a>
                 </td>

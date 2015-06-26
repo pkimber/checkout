@@ -93,7 +93,7 @@ class CheckoutListView(
         return context
 
     def get_queryset(self):
-        return Checkout.objects.payments()
+        return Checkout.objects.success()
 
 
 class StripeMixin(object):
