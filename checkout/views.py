@@ -47,15 +47,17 @@ def _check_perm(request, payment):
         raise PermissionDenied('Valid payment check failed.')
 
 
-def _log_card_error(e, checkout_pk):
+def _log_card_error(e, checkout_pk, content_object_pk):
     logger.error(
         'CardError\n'
-        'payment: {}\n'
+        'checkout: {}\n'
+        'content_object: {}\n'
         'param: {}\n'
         'code: {}\n'
         'http body: {}\n'
         'http status: {}'.format(
             checkout_pk,
+            content_object_pk,
             e.param,
             e.code,
             e.http_body,
@@ -117,9 +119,11 @@ class StripeMixin(object):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
+        checkout = None
         token = form.cleaned_data['token']
         action = CheckoutAction.objects.payment
         try:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
             checkout = Checkout.objects.create_checkout(
                 action=action,
                 name=self.object.checkout_name,
@@ -132,7 +136,6 @@ class StripeMixin(object):
                 checkout.total = self.object.checkout_total
                 checkout.save()
                 # Create the charge on stripe's servers
-                stripe.api_key = settings.STRIPE_SECRET_KEY
                 stripe.Charge.create(
                     amount=self.as_pennies(checkout.total), # pennies
                     currency=CURRENCY,
@@ -142,19 +145,21 @@ class StripeMixin(object):
             with transaction.atomic():
                 url = checkout.success(self.request)
             process_mail.delay()
-            result = super().form_valid(form)
+            self.object = form.save()
+            return HttpResponseRedirect(url)
         except stripe.CardError as e:
+            _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
             url = checkout.fail(self.request)
-            _log_card_error(e, self.checkout.pk)
             result = HttpResponseRedirect(url)
         except stripe.StripeError as e:
+            message = 'checkout: {} content_object: {}'.format(
+                checkout.pk if checkout else None,
+                self.object.pk
+            )
+            log_stripe_error(logger, e, message)
             url = checkout.fail(self.request)
-            log_stripe_error(logger, e, 'checkout: {}'.format(self.checkout.pk))
             result = HttpResponseRedirect(url)
         return result
-
-    def get_success_url(self):
-        return self.object.url
 
     def as_pennies(self, total):
         return int(total * Decimal('100'))

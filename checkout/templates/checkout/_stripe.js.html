@@ -22,7 +22,8 @@
         options = {};
         if (checkout_action == 'payment') {
             options = {
-                amount: {{ total }}
+                amount: {{ total }},
+                currency: "{{ currency }}"
             };
         } else if (checkout_action == 'payment_plan') {
             options = {

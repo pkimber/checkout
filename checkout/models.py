@@ -123,8 +123,8 @@ class CustomerManager(models.Manager):
             )
             return customer.id
         except stripe.StripeError as e:
-            log_stripe_error(logger, e, 'create - email: {}'.format(email))
-            raise
+            log_stripe_error(logger, e, '_stripe_create - email: {}'.format(email))
+            raise CheckoutError('Error creating Stripe customer') from e
 
     def _stripe_update(self, customer_id, description, token):
         """Use the Stripe API to update a customer."""
@@ -134,8 +134,8 @@ class CustomerManager(models.Manager):
             stripe_customer.card = token
             stripe_customer.save()
         except stripe.StripeError as e:
-            log_stripe_error(logger, e, 'update - id: {}'.format(customer_id))
-            raise
+            log_stripe_error(logger, e, '_stripe_update - id: {}'.format(customer_id))
+            raise CheckoutError('Error updating Stripe customer') from e
 
     def init_customer(self, name, email, token):
         """Initialise Stripe customer using email, description and token.
