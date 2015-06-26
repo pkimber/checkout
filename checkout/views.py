@@ -121,7 +121,8 @@ class StripeMixin(object):
         self.object = form.save(commit=False)
         checkout = None
         token = form.cleaned_data['token']
-        action = CheckoutAction.objects.payment
+        checkout_action = form.cleaned_data['checkout_action']
+        action = CheckoutAction.objects.get(slug=checkout_action)
         try:
             stripe.api_key = settings.STRIPE_SECRET_KEY
             checkout = Checkout.objects.create_checkout(
