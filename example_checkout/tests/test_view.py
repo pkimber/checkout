@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-from checkout.views import PAYMENT_PK
+from checkout.views import CHECKOUT_PK
 from example_checkout.tests.factories import SalesLedgerFactory
 from finance.tests.factories import VatSettingsFactory
 from login.tests.factories import TEST_PASSWORD
@@ -45,19 +45,19 @@ class TestView(TestCase):
         pencil = Product.objects.create_product(
             'pencil', 'Pencil', '', Decimal('1.32'), stationery
         )
-        sales_ledger = SalesLedgerFactory(
+        self.sales_ledger = SalesLedgerFactory(
             product=pencil,
             quantity=Decimal('2'),
         )
-        self.checkout = sales_ledger.create_checkout(token='123')
-        self.checkout.save()
-        self.checkout.url = reverse('pay.list')
-        self.checkout.url_failure = reverse('pay.list')
-        self.checkout.save()
+        # self.checkout = sales_ledger.create_checkout(token='123')
+        # self.checkout.save()
+        # self.checkout.url = reverse('pay.list')
+        # self.checkout.url_failure = reverse('pay.list')
+        # self.checkout.save()
 
     def _set_session_payment_pk(self, pk):
         session = self.client.session
-        session[PAYMENT_PK] = pk
+        session[CHECKOUT_PK] = pk
         session.save()
 
     #def test_pay_later(self):
@@ -73,8 +73,8 @@ class TestView(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_stripe(self):
-        self._set_session_payment_pk(self.checkout.pk)
+        self._set_session_payment_pk(self.sales_ledger.pk)
         response = self.client.get(
-            reverse('example.stripe.update', kwargs=dict(pk=self.checkout.pk))
+            reverse('example.stripe.update', kwargs=dict(pk=self.sales_ledger.pk))
         )
         self.assertEqual(response.status_code, 200)

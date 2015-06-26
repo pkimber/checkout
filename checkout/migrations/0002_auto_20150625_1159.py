@@ -20,7 +20,8 @@ def default_state(apps, schema_editor):
     migration expects.  We use the historical version.
 
     """
-
+    model = apps.get_model('checkout', 'CheckoutAction')
+    _init_state(model, 'Payment', 'payment')
     model = apps.get_model('checkout', 'CheckoutState')
     _init_state(model, 'Fail', 'fail')
     _init_state(model, 'Pending', 'pending')

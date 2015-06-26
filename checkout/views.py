@@ -37,7 +37,7 @@ from .models import (
 
 
 CURRENCY = 'GBP'
-PAYMENT_PK = 'payment_pk'
+CHECKOUT_PK = 'payment_pk'
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 
 def _check_perm(request, payment):
     """Check the session variable to make sure it was set."""
-    payment_pk = request.session.get(PAYMENT_PK, None)
+    payment_pk = request.session.get(CHECKOUT_PK, None)
     if payment_pk:
         if not payment_pk == payment.pk:
             logger.critical(
@@ -74,10 +74,39 @@ def _check_perm(request, payment):
         raise PermissionDenied('Valid payment check failed.')
 
 
-def _send_notification_email(payment, request):
+def _log_card_error(e, payment_pk):
+    logger.error(
+        'CardError\n'
+        'payment: {}\n'
+        'param: {}\n'
+        'code: {}\n'
+        'http body: {}\n'
+        'http status: {}'.format(
+            payment_pk,
+            e.param,
+            e.code,
+            e.http_body,
+            e.http_status,
+        )
+    )
+
+
+def _notify_admin(checkout, description, request):
     email_addresses = [n.email for n in Notify.objects.all()]
     if email_addresses:
         subject, message = payment.mail_subject_and_message(request)
+        caption = checkout.action.name
+        subject = '{} from {}'.format(caption.capitalize(), checkout.customer.name)
+        message = '{} - {} from {}, {}:'.format(
+            self.created.strftime('%d/%m/%Y %H:%M'),
+            caption,
+            checkout.customer.name,
+            checkout.customer.email,
+        )
+        message = message + '\n\n{}\n\n{}'.format(
+            description,
+            request.build_absolute_uri(self.content_object.get_absolute_url()),
+        )
         queue_mail_message(
             payment,
             email_addresses,
@@ -142,40 +171,9 @@ class StripeMixin(object):
     #form_class = CheckoutForm
     #model = Checkout
 
-    def _init_customer(self, name, email, token):
+    def _init_customer(self, email, description, token):
         """Make sure a stripe customer is created and update card (token)."""
-
-        ### The following is the original code
-        result = None
-        try:
-            c = StripeCustomer.objects.get(email=email)
-            self._stripe_customer_update(c.customer_id, name, token)
-            result = c.customer_id
-        except StripeCustomer.DoesNotExist:
-            customer = self._stripe_customer_create(name, email, token)
-            c = StripeCustomer(**dict(
-                customer_id=customer.id,
-                email=email,
-            ))
-            c.save()
-            result = c.customer_id
-        return result
-
-    def _log_card_error(self, e, payment_pk):
-        logger.error(
-            'CardError\n'
-            'payment: {}\n'
-            'param: {}\n'
-            'code: {}\n'
-            'http body: {}\n'
-            'http status: {}'.format(
-                payment_pk,
-                e.param,
-                e.code,
-                e.http_body,
-                e.http_status,
-            )
-        )
+        return Customer.objects.init_customer(email, description, token)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -188,7 +186,7 @@ class StripeMixin(object):
             email=self.object.checkout_email,
             key=settings.STRIPE_PUBLISH_KEY,
             name=settings.STRIPE_CAPTION,
-            total=self.total_as_pennies(),
+            total=self.as_pennies(self.object.checkout_total), # pennies
         ))
         return context
 
@@ -196,43 +194,65 @@ class StripeMixin(object):
         self.object = form.save(commit=False)
         # Create the charge on Stripe's servers - this will charge the users card
         token = form.cleaned_data['token']
-        self.object.save_token(token)
+        # self.object.save_token(token)
         # Set your secret key: remember to change this to your live secret key
         # in production.  See your keys here https://manage.stripe.com/account
         stripe.api_key = settings.STRIPE_SECRET_KEY
         try:
-            customer_id = self._init_customer(
-                self.object.email,
-                token
-            )
-            stripe.Charge.create(
-                amount=self.total_as_pennies(), # amount in pennies, again
-                currency=CURRENCY,
-                customer=customer_id,
-                description=', '.join(self.object.description),
-            )
-            with transaction.atomic():
-                self.object.set_paid()
-            queue_mail_template(
+            # create a checkout request
+            # checkout = self.object.checkout(token)
+            checkout = self.object.create_checkout(
+                self.object.checkout_name,
+                self.object.checkout_email,
+                token,
                 self.object,
-                self.object.mail_template_name,
-                self.object.mail_template_context(),
             )
-            _send_notification_email(self.object, self.request)
+
+            # checkout.token = token
+            # checkout.save()
+            # # initialise the customer
+            # customer = self._init_customer(
+            #     checkout.email,
+            #     checkout.description,
+            #     token
+            # )
+            description = ', '.join(self.object.checkout_description)
+            if checkout.payment:
+                checkout.total = self.object.checkout_total
+                checkout.save()
+                stripe.Charge.create(
+                    amount=self.as_pennies(checkout.total), # pennies
+                    currency=CURRENCY,
+                    customer=checkout.customer.customer_id,
+                    description=description,
+                )
+            with transaction.atomic():
+                #self.object.set_checkout_state(CheckoutState.objects.success)
+                checkout.success
+                url = self.object.checkout_success
+                _notify_admin(checkout, description, self.request)
+            # this should now be done by the object in 'checkout_success'
+            # queue_mail_template(
+            #     self.object,
+            #     self.object.mail_template_name,
+            #     self.object.mail_template_context(),
+            # )
             process_mail.delay()
             result = super().form_valid(form)
         except stripe.CardError as e:
-            self.object.set_payment_failed()
-            self._log_card_error(e, self.object.pk)
-            result = HttpResponseRedirect(self.object.url_failure)
+            url = self.object.checkout_failure
+            # self.object.set_payment_failed()
+            _log_card_error(e, self.object.pk)
+            result = HttpResponseRedirect(url)
         except stripe.StripeError as e:
-            self.object.set_payment_failed()
+            url = self.object.checkout_failure
+            # self.object.set_payment_failed()
             log_stripe_error(logger, e, 'payment: {}'.format(self.object.pk))
-            result = HttpResponseRedirect(self.object.url_failure)
+            result = HttpResponseRedirect(url)
         return result
 
     def get_success_url(self):
         return self.object.url
 
-    def total_as_pennies(self):
-        return int(self.object.checkout_total * Decimal('100'))
+    def as_pennies(self, total):
+        return int(total * Decimal('100'))

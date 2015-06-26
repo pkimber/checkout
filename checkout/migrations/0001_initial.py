@@ -14,22 +14,36 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Checkout',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('object_id', models.PositiveIntegerField()),
-                ('content_type', models.ForeignKey(to='contenttypes.ContentType')),
             ],
             options={
                 'verbose_name': 'Checkout',
-                'verbose_name_plural': 'Checkouts',
                 'ordering': ('pk',),
+                'verbose_name_plural': 'Checkouts',
+            },
+        ),
+        migrations.CreateModel(
+            name='CheckoutAction',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('created', models.DateTimeField(auto_now_add=True)),
+                ('modified', models.DateTimeField(auto_now=True)),
+                ('name', models.CharField(max_length=100)),
+                ('slug', models.SlugField(unique=True)),
+            ],
+            options={
+                'verbose_name': 'Checkout action',
+                'ordering': ('name',),
+                'verbose_name_plural': 'Checkout action',
             },
         ),
         migrations.CreateModel(
             name='CheckoutState',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=100)),
@@ -37,24 +51,35 @@ class Migration(migrations.Migration):
             ],
             options={
                 'verbose_name': 'Checkout state',
-                'verbose_name_plural': 'Checkout states',
                 'ordering': ('name',),
+                'verbose_name_plural': 'Checkout states',
             },
         ),
         migrations.CreateModel(
             name='Customer',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
-                ('email', models.EmailField(unique=True, max_length=254)),
+                ('name', models.TextField()),
+                ('email', models.EmailField(max_length=254, unique=True)),
                 ('customer_id', models.TextField()),
             ],
             options={
                 'verbose_name': 'Customer',
-                'verbose_name_plural': 'Customers',
                 'ordering': ('pk',),
+                'verbose_name_plural': 'Customers',
             },
+        ),
+        migrations.AddField(
+            model_name='checkout',
+            name='action',
+            field=models.ForeignKey(to='checkout.CheckoutAction'),
+        ),
+        migrations.AddField(
+            model_name='checkout',
+            name='content_type',
+            field=models.ForeignKey(to='contenttypes.ContentType'),
         ),
         migrations.AddField(
             model_name='checkout',

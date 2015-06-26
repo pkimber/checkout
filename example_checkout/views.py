@@ -11,7 +11,7 @@ from braces.views import LoginRequiredMixin
 
 from base.view_utils import BaseMixin
 from checkout.views import (
-    PAYMENT_PK,
+    CHECKOUT_PK,
     StripeMixin,
 )
 from .forms import ExampleCheckoutForm
@@ -35,7 +35,7 @@ class ExampleCheckout(StripeMixin, BaseMixin, UpdateView):
             payment.url = reverse('pay.list')
             payment.url_failure = reverse('pay.list')
             payment.save()
-            self.request.session[PAYMENT_PK] = payment.pk
+            self.request.session[CHECKOUT_PK] = payment.pk
             return HttpResponseRedirect(
                 reverse('example.pay.stripe', kwargs=dict(pk=payment.pk))
             )

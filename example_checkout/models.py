@@ -35,14 +35,15 @@ class SalesLedgerManager(models.Manager):
 class SalesLedger(models.Model):
     """List of prices."""
 
+    name = models.CharField(max_length=100)
     email = models.EmailField()
     description = models.CharField(max_length=100)
     product = models.ForeignKey(Product)
     quantity = models.IntegerField()
-    checkout_state = models.ForeignKey(
-        CheckoutState,
-        default=default_checkout_state,
-    )
+    # checkout_state = models.ForeignKey(
+    #     CheckoutState,
+    #     default=default_checkout_state,
+    # )
     objects = SalesLedgerManager()
 
     class Meta:
@@ -60,45 +61,47 @@ class SalesLedger(models.Model):
     #def allow_pay_later(self):
     #    return False
 
-    def create_checkout(self, token):
-        """Example payment.
+    # def checkout(self, token):
+    #     """Create a checkout instance."""
+    #     return Checkout.objects.create_payment(
+    #         self.name,
+    #         self.email,
+    #         self.total,
+    #         token,
+    #         self
+    #     )
+    #     #vat_settings = VatSettings.objects.settings()
+    #     #PaymentLine.objects.create_payment_line(
+    #     #    payment=payment,
+    #     #    product=self.product,
+    #     #    quantity=self.quantity,
+    #     #    units='each',
+    #     #    vat_code=vat_settings.standard_vat_code,
+    #     #)
+    #     #return payment
 
-        Note: Must be called from within a transaction.
+    #@property
+    #def is_paid(self):
+    #    return self.payment_state == CheckoutState.objects.success
 
-        """
-        return Checkout.objects.create_checkout(
-            self.email, self.description, token, self
-        )
-        #vat_settings = VatSettings.objects.settings()
-        #PaymentLine.objects.create_payment_line(
-        #    payment=payment,
-        #    product=self.product,
-        #    quantity=self.quantity,
-        #    units='each',
-        #    vat_code=vat_settings.standard_vat_code,
-        #)
-        return payment
+    #@property
+    #def can_pay(self):
+    #    return self.checkout_state == CheckoutState.objects.pending
+
+    #@property
+    #def mail_template_name(self):
+    #    """Which mail template to use.
+    #    We don't allow pay later (see 'allow_pay_later' above).
+    #    """
+    #    return 'PAYMENT_THANKYOU'
+
+    #def set_checkout_state(self, checkout_state):
+    #    self.checkout_state = checkout_state
+    #    self.save()
 
     @property
-    def is_paid(self):
-        return self.payment_state == CheckoutState.objects.success
-
-    @property
-    def can_pay(self):
-        return self.checkout_state == CheckoutState.objects.pending
-
-    @property
-    def mail_template_name(self):
-        """Which mail template to use.
-
-        We don't allow pay later (see 'allow_pay_later' above).
-
-        """
-        return 'PAYMENT_THANKYOU'
-
-    def set_checkout_state(self, checkout_state):
-        self.checkout_state = checkout_state
-        self.save()
+    def checkout_name(self):
+        return self.name
 
     @property
     def checkout_description(self):
@@ -107,6 +110,16 @@ class SalesLedger(models.Model):
     @property
     def checkout_email(self):
         return self.email
+
+    @property
+    def checkout_fail(self):
+        """just for testing."""
+        return reverse('pay.list')
+
+    @property
+    def checkout_success(self):
+        """just for testing."""
+        return reverse('pay.list')
 
     @property
     def checkout_total(self):

@@ -86,25 +86,53 @@ class CheckoutState(TimeStampedModel):
 reversion.register(CheckoutState)
 
 
+class CheckoutActionManager(models.Manager):
+
+    @property
+    def payment(self):
+        return self.model.objects.get(slug=self.model.PAYMENT)
+
+
+class CheckoutAction(TimeStampedModel):
+
+    PAYMENT = 'payment'
+
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    objects = CheckoutActionManager()
+
+    class Meta:
+        ordering = ('name',)
+        verbose_name = 'Checkout action'
+        verbose_name_plural = 'Checkout action'
+
+    def __str__(self):
+        return '{}'.format(self.name)
+
+reversion.register(CheckoutAction)
+
+
 class CustomerManager(models.Manager):
 
-    def _create_customer(self, email, customer_id):
-        obj = self.model(email=email, customer_id=customer_id)
+    def _create_customer(self, name, email, customer_id):
+        obj = self.model(name=name, email=email, customer_id=customer_id)
         obj.save()
         return obj
 
-    def _stripe_customer_create(self, email, description, token):
+    def _stripe_create(self, email, description, token):
         """Use the Stripe API to create a customer."""
         try:
-            return stripe.Customer.create(
+            customer = stripe.Customer.create(
                 email=email,
                 description=description,
                 card=token,
             )
+            return customer.id
         except stripe.StripeError as e:
             log_stripe_error(logger, e, 'create - email: {}'.format(email))
+            raise
 
-    def _stripe_customer_update(self, customer_id, description, token):
+    def _stripe_update(self, customer_id, description, token):
         """Use the Stripe API to update a customer."""
         try:
             stripe_customer = stripe.Customer.retrieve(customer_id)
@@ -113,20 +141,37 @@ class CustomerManager(models.Manager):
             stripe_customer.save()
         except stripe.StripeError as e:
             log_stripe_error(logger, e, 'update - id: {}'.format(customer_id))
+            raise
 
-    def init_customer(self, email, description, token):
+    def init_customer(self, name, email, token):
+        """Initialise Stripe customer using email, description and token.
+
+        1. Lookup existing customer record in the database.
+
+           - Retrieve customer from Stripe and update description and token.
+
+        2. If the customer does not exist:
+
+          - Create Stripe customer with email, description and token.
+          - Create a customer record in the database.
+
+        Return the customer database record.
+
+        """
         try:
             obj = self.model.objects.get(email=email)
+            obj.name = name
             obj.save()
-            self._stripe_customer_update(obj.customer_id, description, token)
+            self._stripe_update(obj.customer_id, name, token)
         except self.model.DoesNotExist:
-            stripe_customer = self._stripe_customer_create(email, description, token)
-            obj = self._create_customer(email, token)
+            customer_id = self._stripe_create(email, name, token)
+            obj = self._create_customer(name, email, customer_id)
         return obj
 
 
 class Customer(TimeStampedModel):
 
+    name = models.TextField()
     email = models.EmailField(unique=True)
     customer_id = models.TextField()
     objects = CustomerManager()
@@ -148,10 +193,11 @@ reversion.register(Customer)
 
 class CheckoutManager(models.Manager):
 
-    def create_checkout(self, email, description, token, content_object):
-        """Create a checkout request."""
-        customer = Customer.objects.init_customer(email, description, token)
+    def create_checkout(self, name, email, token, content_object):
+        """Create a checkout payment request."""
+        customer = Customer.objects.init_customer(name, email, token)
         obj = self.model(
+            CheckoutAction.objects.payment,
             content_object=content_object,
             customer=customer,
         )
@@ -159,16 +205,19 @@ class CheckoutManager(models.Manager):
         return obj
 
     def audit(self):
-        """Select all valid payments for a list of payments."""
         return self.model.objects.all().order_by('-pk')
 
     def payments(self):
-        return self.audit().filter(state__slug=CheckoutState.SUCCESS)
+        return self.audit().filter(
+            action=CheckoutAction.objects.payment,
+            state=CheckoutState.objects.success,
+        )
 
 
 class Checkout(TimeStampedModel):
     """Checkout."""
 
+    action = models.ForeignKey(CheckoutAction)
     customer = models.ForeignKey(Customer)
     state = models.ForeignKey(CheckoutState, default=default_checkout_state)
     # link to the object in the system which requested the checkout
@@ -193,6 +242,15 @@ class Checkout(TimeStampedModel):
             return self.content_object.get_absolute_url()
         except AttributeError:
             return None
+
+    @property
+    def payment(self):
+        return self.action == CheckoutAction.objects.payment
+
+    @property
+    def success(self):
+        self.state == CheckoutState.objects.success
+        self.save()
 
     #@property
     #def description(self):

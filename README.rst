@@ -1,5 +1,5 @@
-Payment
-*******
+Checkout
+********
 
 Django application for an online payments.
 

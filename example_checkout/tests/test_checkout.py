@@ -89,11 +89,11 @@ from example_checkout.tests.factories import SalesLedgerFactory
 #    } == payment.mail_template_context()
 
 
-@pytest.mark.django_db
-def test_make_payment():
-    #VatSettingsFactory()
-    sales_ledger = SalesLedgerFactory()
-    sales_ledger.create_checkout(token='123')
+#@pytest.mark.django_db
+#def test_make_payment():
+#    #VatSettingsFactory()
+#    sales_ledger = SalesLedgerFactory()
+#    sales_ledger.create_checkout(token='123')
 
 
 #@pytest.mark.django_db
