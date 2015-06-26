@@ -199,10 +199,6 @@ class Customer(TimeStampedModel):
     def __str__(self):
         return '{} {}'.format(self.email, self.customer_id)
 
-    @property
-    def has_customer(self):
-        return bool(self.customer_id)
-
 reversion.register(Customer)
 
 
