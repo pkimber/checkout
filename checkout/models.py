@@ -12,11 +12,16 @@ from django.utils import timezone
 import reversion
 import stripe
 
+from base.model_utils import TimeStampedModel
 from finance.models import (
     legacy_vat_code,
     VatCode,
 )
-from base.model_utils import TimeStampedModel
+from mail.models import Notify
+from mail.service import (
+    queue_mail_message,
+    queue_mail_template,
+)
 from stock.models import Product
 
 
@@ -170,6 +175,16 @@ class CustomerManager(models.Manager):
 
 
 class Customer(TimeStampedModel):
+    """Stripe Customer.
+
+    Link the Stripe customer to an email address (and name).
+
+    Note: It is expected that multiple users in our databases could have the
+    same email address.  If they have different names, then this table looks
+    very confusing.  Try checking the 'content_object' of the 'Checkout' model
+    if you need to diagnose an issue.
+
+    """
 
     name = models.TextField()
     email = models.EmailField(unique=True)
@@ -193,13 +208,15 @@ reversion.register(Customer)
 
 class CheckoutManager(models.Manager):
 
-    def create_checkout(self, action, name, email, token, content_object):
+    def create_checkout(
+            self, action, name, email, description, token, content_object):
         """Create a checkout payment request."""
         customer = Customer.objects.init_customer(name, email, token)
         obj = self.model(
             action=action,
             content_object=content_object,
             customer=customer,
+            description=description,
         )
         obj.save()
         return obj
@@ -220,6 +237,10 @@ class Checkout(TimeStampedModel):
     action = models.ForeignKey(CheckoutAction)
     customer = models.ForeignKey(Customer)
     state = models.ForeignKey(CheckoutState, default=default_checkout_state)
+    description = models.TextField()
+    total = models.DecimalField(
+        max_digits=8, decimal_places=2, blank=True, null=True
+    )
     # link to the object in the system which requested the checkout
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
@@ -236,6 +257,41 @@ class Checkout(TimeStampedModel):
     def __str__(self):
         return '{}'.format(self.customer.email)
 
+    def _notify(self, request):
+        email_addresses = [n.email for n in Notify.objects.all()]
+        if email_addresses:
+            caption = self.action.name
+            subject = '{} from {}'.format(
+                caption.capitalize(),
+                self.customer.name,
+            )
+            message = '{} - {} from {}, {}:'.format(
+                self.created.strftime('%d/%m/%Y %H:%M'),
+                caption,
+                self.customer.name,
+                self.customer.email,
+            )
+            message = message + '\n\n{}\n\n{}'.format(
+                self.description,
+                request.build_absolute_uri(self.content_object_url),
+            )
+            queue_mail_message(
+                self,
+                email_addresses,
+                subject,
+                message,
+            )
+        else:
+            logging.error(
+                "Cannot send email notification of checkout transaction.  "
+                "No email addresses set-up in 'enquiry.models.Notify'"
+            )
+
+    def _success_or_fail(self, state, request):
+        self.state = state
+        self.save()
+        self._notify(request)
+
     @property
     def content_object_url(self):
         try:
@@ -245,19 +301,25 @@ class Checkout(TimeStampedModel):
 
     @property
     def fail(self):
-        self.state == CheckoutState.objects.fail
-        self.save()
+        """Checkout failed - so update and notify admin."""
+        self._success_or_fail(CheckoutState.objects.fail, request)
         return self.content_object.checkout_fail
 
     @property
-    def payment(self):
-        return self.action == CheckoutAction.objects.payment
+    def failed(self, request):
+        """Did the checkout request fail?"""
+        return self.state == CheckoutState.objects.fail
 
     @property
-    def success(self):
-        self.state == CheckoutState.objects.success
-        self.save()
+    def payment(self):
+        """Is this a payment action."""
+        return self.action == CheckoutAction.objects.payment
+
+    def success(self, request):
+        """Checkout successful - so update and notify admin."""
+        self._success_or_fail(CheckoutState.objects.success, request)
         return self.content_object.checkout_success
+
 
     #@property
     #def description(self):

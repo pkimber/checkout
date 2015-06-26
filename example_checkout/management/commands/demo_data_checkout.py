@@ -29,9 +29,9 @@ class Command(BaseCommand):
             'pencil', 'Pencil', '', Decimal('1.32'), stationery
         )
         SalesLedger.objects.create_sales_ledger(
-            'Patrick', 'test@pkimber.net', pencil, 2
+            'Patrick', 'patrick@test.com', pencil, 2
         )
         SalesLedger.objects.create_sales_ledger(
-            'Andrea', 'test@pkimber.net', pencil, 1
+            'Andrea', 'andrea@test.com', pencil, 1
         )
         print("Created 'checkout' demo data...")

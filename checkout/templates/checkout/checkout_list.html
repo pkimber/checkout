@@ -2,16 +2,18 @@
 {% load static %}
 
 {% block title %}
+  Checkout
   {% if audit %}
-    Payment Audit
+    Audit
   {% else %}
     Payments
   {% endif %}
 {% endblock title %}
 
 {% block sub_heading %}
+  Checkout
   {% if audit %}
-    Payment Audit
+    Audit
   {% else %}
     Payments
   {% endif %}
@@ -29,14 +31,14 @@
           </li>
           {% if audit %}
             <li class="pure-menu-item">
-              <a href="{% url 'pay.list' %}" class="pure-menu-link">
+              <a href="{% url 'checkout.list' %}" class="pure-menu-link">
                 <i class="fa fa-shopping-cart"></i>
                 Payments
               </a>
             </li>
           {% else %}
             <li class="pure-menu-item">
-              <a href="{% url 'pay.list.audit' %}" class="pure-menu-link">
+              <a href="{% url 'checkout.list.audit' %}" class="pure-menu-link">
                 <i class="fa fa-shopping-cart"></i>
                 Audit
               </a>
@@ -49,7 +51,7 @@
   <div class="pure-g">
     <div class="pure-u-1">
       {% include 'base/_paginate.html' %}
-      {% include 'checkout/_payment_list.html' %}
+      {% include 'checkout/_checkout_list.html' %}
       {% include 'base/_paginate.html' %}
     </div>
   </div>

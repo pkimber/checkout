@@ -118,12 +118,12 @@ class SalesLedger(models.Model):
     @property
     def checkout_fail(self):
         """just for testing."""
-        return reverse('pay.list')
+        return reverse('checkout.list.audit')
 
     @property
     def checkout_success(self):
         """just for testing."""
-        return reverse('pay.list')
+        return reverse('checkout.list')
 
     @property
     def checkout_total(self):

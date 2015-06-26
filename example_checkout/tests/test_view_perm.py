@@ -9,8 +9,8 @@ class TestViewPerm(PermTestCase):
     def setUp(self):
         self.setup_users()
 
-    def test_pay_list(self):
-        self.assert_staff_only(reverse('pay.list'))
+    def test_checkout_list(self):
+        self.assert_staff_only(reverse('checkout.list'))
 
-    def test_pay_list_audit(self):
-        self.assert_staff_only(reverse('pay.list.audit'))
+    def test_checkout_list_audit(self):
+        self.assert_staff_only(reverse('checkout.list.audit'))

@@ -4,14 +4,12 @@
       <th>Date</th>
       <th>Customer</th>
       <th>Description</th>
-      <th>Net</th>
-      <th>VAT</th>
       <th>Total</th>
       <th>State</th>
     </tr>
   </thead>
   <tbody>
-    {% for o in payment_list %}
+    {% for o in object_list %}
       <tr valign="top">
         <td>
           <small>
@@ -23,7 +21,7 @@
         <td>
           {% if o.content_object_url %}
             <a href="{{ o.content_object_url }}">
-              {{ o.name }}
+              {{ o.customer.name }}
             </a>
           {% else %}
             {{ o.name }}
@@ -31,48 +29,22 @@
           <br />
           <small>
             <a href="mailto:{{ o.email }}">
-              {{ o.email }}
+              {{ o.customer.email }}
             </a>
           </small>
         </td>
         <td>
           <small>
-            {% for line in o.paymentline_set.all %}
-              {{ line.quantity_normalize }} @ {{ line.save_price }}
-              {{ line.product.name|truncatechars:30 }}
-              <br />
-            {% endfor %}
+            {{ o.description }}
           </small>
         </td>
         <td align="right">
-          <small>
-            {% for line in o.paymentline_set.all %}
-              {{ line.net }}
-              <br />
-            {% endfor %}
-          </small>
-        </td>
-        <td align="right">
-          <small>
-            {% for line in o.paymentline_set.all %}
-              {{ line.vat }}
-              <br />
-            {% endfor %}
-          </small>
-        </td>
-        <td align="right">
-          <small>
-            {% for line in o.paymentline_set.all %}
-              {{ line.gross }}
-              <br />
-            {% endfor %}
-          </small>
           <strong>
             {{ o.total }}
           </strong>
         </td>
         <td>
-          {% if o.is_payment_failed %}
+          {% if o.failed %}
             <i class="fa fa-warning"></i>
           {% endif %}
           {{ o.state.name }}

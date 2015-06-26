@@ -18,9 +18,5 @@ class SalesLedgerFactory(factory.django.DjangoModelFactory):
         return '{:02d}@pkimber.net'.format(n)
 
     @factory.sequence
-    def description(n):
-        return 'description_{:02d}'.format(n)
-
-    @factory.sequence
     def name(n):
         return 'name_{:02d}'.format(n)

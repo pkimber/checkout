@@ -5,19 +5,19 @@ from django.conf.urls import (
 )
 
 from .views import (
-    PaymentAuditListView,
-    PaymentListView,
+    CheckoutAuditListView,
+    CheckoutListView,
 )
 
 
 urlpatterns = patterns(
     '',
     url(regex=r'^audit/$',
-        view=PaymentAuditListView.as_view(),
-        name='pay.list.audit'
+        view=CheckoutAuditListView.as_view(),
+        name='checkout.list.audit'
         ),
     url(regex=r'^$',
-        view=PaymentListView.as_view(),
-        name='pay.list'
+        view=CheckoutListView.as_view(),
+        name='checkout.list'
         ),
 )

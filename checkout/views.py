@@ -17,11 +17,6 @@ from braces.views import (
 )
 
 from base.view_utils import BaseMixin
-from mail.models import Notify
-from mail.service import (
-    queue_mail_message,
-    queue_mail_template,
-)
 from mail.tasks import process_mail
 
 from .forms import CheckoutForm
@@ -92,36 +87,6 @@ def _log_card_error(e, checkout_pk):
     )
 
 
-def _notify_admin(checkout, description, request):
-    email_addresses = [n.email for n in Notify.objects.all()]
-    if email_addresses:
-        caption = checkout.action.name
-        subject = '{} from {}'.format(
-            caption.capitalize(),
-            checkout.customer.name,
-        )
-        message = '{} - {} from {}, {}:'.format(
-            checkout.created.strftime('%d/%m/%Y %H:%M'),
-            caption,
-            checkout.customer.name,
-            checkout.customer.email,
-        )
-        message = message + '\n\n{}\n\n{}'.format(
-            description,
-            request.build_absolute_uri(checkout.content_object_url),
-        )
-        queue_mail_message(
-            checkout,
-            email_addresses,
-            subject,
-            message,
-        )
-    else:
-        logging.error(
-            "Cannot send email notification of payment.  "
-            "No email addresses set-up in 'enquiry.models.Notify'"
-        )
-
 
 #@require_POST
 #def pay_later_view(request, pk):
@@ -139,7 +104,7 @@ def _notify_admin(checkout, description, request):
 #    return HttpResponseRedirect(payment.url)
 
 
-class PaymentAuditListView(
+class CheckoutAuditListView(
         LoginRequiredMixin, StaffuserRequiredMixin,
         BaseMixin, ListView):
 
@@ -154,7 +119,7 @@ class PaymentAuditListView(
         return Checkout.objects.audit()
 
 
-class PaymentListView(
+class CheckoutListView(
         LoginRequiredMixin, StaffuserRequiredMixin,
         BaseMixin, ListView):
 
@@ -209,6 +174,7 @@ class StripeMixin(object):
                 action=action,
                 name=self.object.checkout_name,
                 email=self.object.checkout_email,
+                description=', '.join(self.object.checkout_description),
                 token=token,
                 content_object=self.object,
             )
@@ -221,8 +187,6 @@ class StripeMixin(object):
             #     checkout.description,
             #     token
             # )
-            description = ', '.join(self.object.checkout_description)
-            print(description)
             if checkout.payment:
                 checkout.total = self.object.checkout_total
                 checkout.save()
@@ -230,12 +194,11 @@ class StripeMixin(object):
                     amount=self.as_pennies(checkout.total), # pennies
                     currency=CURRENCY,
                     customer=checkout.customer.customer_id,
-                    description=description,
+                    description=checkout.description,
                 )
             with transaction.atomic():
                 #self.object.set_checkout_state(CheckoutState.objects.success)
-                url = checkout.success
-                _notify_admin(checkout, description, self.request)
+                url = checkout.success(self.request)
             # this should now be done by the object in 'checkout_success'
             # queue_mail_template(
             #     self.object,
@@ -245,12 +208,12 @@ class StripeMixin(object):
             process_mail.delay()
             result = super().form_valid(form)
         except stripe.CardError as e:
-            url = checkout.fail
+            url = checkout.fail(self.request)
             # self.object.set_payment_failed()
             _log_card_error(e, self.checkout.pk)
             result = HttpResponseRedirect(url)
         except stripe.StripeError as e:
-            url = checkout.fail
+            url = checkout.fail(self.request)
             # self.object.set_payment_failed()
             log_stripe_error(logger, e, 'checkout: {}'.format(self.checkout.pk))
             result = HttpResponseRedirect(url)

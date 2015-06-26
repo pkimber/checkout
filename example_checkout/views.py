@@ -32,8 +32,8 @@ class ExampleCheckout(StripeMixin, BaseMixin, UpdateView):
         with transaction.atomic():
             super(ExampleCheckout, self).form_valid(form)
             payment = self.object.create_payment()
-            payment.url = reverse('pay.list')
-            payment.url_failure = reverse('pay.list')
+            payment.url = reverse('checkout.list')
+            payment.url_failure = reverse('checkout.list')
             payment.save()
             self.request.session[CHECKOUT_PK] = payment.pk
             return HttpResponseRedirect(
