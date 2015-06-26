@@ -22,6 +22,7 @@ def default_state(apps, schema_editor):
     """
     model = apps.get_model('checkout', 'CheckoutAction')
     _init_state(model, 'Payment', 'payment')
+    _init_state(model, 'Payment Plan', 'payment_plan')
     model = apps.get_model('checkout', 'CheckoutState')
     _init_state(model, 'Fail', 'fail')
     _init_state(model, 'Pending', 'pending')

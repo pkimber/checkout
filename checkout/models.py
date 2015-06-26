@@ -101,6 +101,7 @@ class CheckoutActionManager(models.Manager):
 class CheckoutAction(TimeStampedModel):
 
     PAYMENT = 'payment'
+    PAYMENT_PLAN = 'payment_plan'
 
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)

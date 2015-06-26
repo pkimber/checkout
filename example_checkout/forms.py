@@ -11,5 +11,5 @@ class ExampleCheckoutForm(CheckoutForm):
     class Meta:
         model = SalesLedger
         fields = (
-            'checkout_type',
+            'checkout_action',
         )

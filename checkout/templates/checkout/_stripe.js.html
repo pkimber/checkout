@@ -1,26 +1,36 @@
 {% load staticfiles %}
 <script src="https://checkout.stripe.com/checkout.js"></script>
 <script>
+
     var handler = StripeCheckout.configure({
+        name: '{{ name }}',
         email: '{{ email }}',
-        key: '{{ key }}',
+        description: '{% for item in description %}{% if forloop.counter0 %}, {% endif %}{{ item }}{% endfor %}',
         image: '{% static 'project/stripe/128x128.png' %}',
+        key: '{{ key }}',
         token: function(token) {
             // Use the token to create the charge with a server-side script.
             // You can access the token ID with `token.id`
-            console.log(token);
             $('#id_token').val(token.id);
             $('#id_checkout_form').submit();
         }
     });
 
     $('#id_checkout_form :submit').on('click', function(e) {
+        // Which action has the user chosen?
+        var checkout_action = $('#id_checkout_form input[type=radio]:checked').val();
+        options = {};
+        if (checkout_action == 'payment') {
+            options = {
+                amount: {{ total }}
+            };
+        } else if (checkout_action == 'payment_plan') {
+            options = {
+                panelLabel: "Setup Payment Plan"
+            };
+        }
         // Open Checkout with further options
-        handler.open({
-            name: '{{ name }}',
-            description: '{% for item in description %}{% if forloop.counter0 %}, {% endif %}{{ item }}{% endfor %}',
-            amount: {{ total }}
-        });
+        handler.open(options);
         e.preventDefault();
     });
 
