@@ -29,7 +29,7 @@ def check_checkout(model_instance):
     url = model_instance.checkout_fail
     if not url:
         raise CheckoutError("{}.checkout_fail' should return a url")
-    url = model_instance.checkout_success
+    url = model_instance.checkout_success(None, None)
     if not url:
         raise CheckoutError("{}.checkout_success' should return a url")
     # do we have mail templates for paid and pay later?

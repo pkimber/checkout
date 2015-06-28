@@ -33,7 +33,7 @@ class SalesLedger(models.Model):
         verbose_name_plural = 'Sales ledger'
 
     def __str__(self):
-        return '{}'.format(self.description)
+        return '{}'.format(self.checkout_description)
 
     def get_absolute_url(self):
         """just for testing."""
@@ -61,8 +61,7 @@ class SalesLedger(models.Model):
         """just for testing."""
         return reverse('checkout.list.audit')
 
-    @property
-    def checkout_success(self):
+    def checkout_success(self, checkout, request):
         """just for testing."""
         return reverse('checkout.list')
 
