@@ -10,7 +10,11 @@ from django.views.generic import (
 from braces.views import LoginRequiredMixin
 
 from base.view_utils import BaseMixin
-from checkout.models import CheckoutAction
+from checkout.models import (
+    Checkout,
+    CheckoutAction,
+    Customer,
+)
 from checkout.views import (
     CHECKOUT_PK,
     CheckoutMixin,
@@ -36,6 +40,12 @@ class SalesLedgerCheckoutDirectDebitUpdateView(
     template_name = 'example/direct_debit.html'
 
     def form_valid(self, form):
+        customer = Customer.objects.get(email=self.object.checkout_email)
+        checkout = Checkout.objects.pay(
+            CheckoutAction.objects.payment,
+            customer,
+            self.object
+        )
         return super().form_valid(form)
 
     def get_success_url(self):
