@@ -1,6 +1,9 @@
 # -*- encoding: utf-8 -*-
 import logging
 
+from decimal import Decimal
+
+from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -13,7 +16,12 @@ from mail.models import Notify
 from mail.service import queue_mail_message
 
 
+CURRENCY = 'GBP'
 logger = logging.getLogger(__name__)
+
+
+def as_pennies(total):
+    return int(total * Decimal('100'))
 
 
 def default_checkout_state():
@@ -120,6 +128,7 @@ class CustomerManager(models.Manager):
     def _stripe_create(self, email, description, token):
         """Use the Stripe API to create a customer."""
         try:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
             customer = stripe.Customer.create(
                 email=email,
                 description=description,
@@ -133,6 +142,7 @@ class CustomerManager(models.Manager):
     def _stripe_update(self, customer_id, description, token):
         """Use the Stripe API to update a customer."""
         try:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
             stripe_customer = stripe.Customer.retrieve(customer_id)
             stripe_customer.description = description
             stripe_customer.card = token
@@ -141,7 +151,7 @@ class CustomerManager(models.Manager):
             log_stripe_error(logger, e, '_stripe_update - id: {}'.format(customer_id))
             raise CheckoutError('Error updating Stripe customer') from e
 
-    def init_customer(self, name, email, token):
+    def init_customer(self, content_object, token):
         """Initialise Stripe customer using email, description and token.
 
         1. Lookup existing customer record in the database.
@@ -156,6 +166,8 @@ class CustomerManager(models.Manager):
         Return the customer database record.
 
         """
+        name = content_object.checkout_name
+        email = content_object.checkout_email
         try:
             obj = self.model.objects.get(email=email)
             obj.name = name
@@ -197,10 +209,8 @@ reversion.register(Customer)
 
 class CheckoutManager(models.Manager):
 
-    def create_checkout(
-            self, action, name, email, description, token, content_object):
+    def _create_checkout(self, action, customer, description, content_object):
         """Create a checkout payment request."""
-        customer = Customer.objects.init_customer(name, email, token)
         obj = self.model(
             action=action,
             content_object=content_object,
@@ -212,6 +222,27 @@ class CheckoutManager(models.Manager):
 
     def audit(self):
         return self.model.objects.all().order_by('-pk')
+
+    def pay(self, action, customer, content_object):
+        description=', '.join(content_object.checkout_description),
+        obj = self._create_checkout(
+            action,
+            customer,
+            ', '.join(content_object.checkout_description),
+            content_object,
+        )
+        if obj.payment:
+            obj.total = content_object.checkout_total
+            obj.save()
+            # Create the charge on stripe's servers
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+            stripe.Charge.create(
+                amount=as_pennies(content_object.checkout_total),
+                currency=CURRENCY,
+                customer=customer.customer_id,
+                description=obj.description,
+            )
+        return obj
 
     def success(self):
         return self.audit().filter(state=CheckoutState.objects.success)

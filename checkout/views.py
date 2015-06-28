@@ -19,15 +19,16 @@ from base.view_utils import BaseMixin
 from mail.tasks import process_mail
 
 from .models import (
+    as_pennies,
     Checkout,
     CheckoutAction,
+    CURRENCY,
     Customer,
     log_stripe_error,
 )
 
 
 CHECKOUT_PK = 'checkout_pk'
-CURRENCY = 'GBP'
 logger = logging.getLogger(__name__)
 
 
@@ -97,10 +98,6 @@ class CheckoutListView(
 
 class CheckoutMixin(object):
 
-    def _init_customer(self, email, description, token):
-        """Make sure a stripe customer is created and update card (token)."""
-        return Customer.objects.init_customer(email, description, token)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # TODO PJK Do I need to re-instate this?
@@ -112,7 +109,7 @@ class CheckoutMixin(object):
             email=self.object.checkout_email,
             key=settings.STRIPE_PUBLISH_KEY,
             name=settings.STRIPE_CAPTION,
-            total=self.as_pennies(self.object.checkout_total), # pennies
+            total=as_pennies(self.object.checkout_total), # pennies
         ))
         return context
 
@@ -120,46 +117,28 @@ class CheckoutMixin(object):
         self.object = form.save(commit=False)
         checkout = None
         token = form.cleaned_data['token']
-        action = CheckoutAction.objects.get(slug=form.cleaned_data['action'])
-        try:
-            stripe.api_key = settings.STRIPE_SECRET_KEY
-            checkout = Checkout.objects.create_checkout(
-                action=action,
-                name=self.object.checkout_name,
-                email=self.object.checkout_email,
-                description=', '.join(self.object.checkout_description),
-                token=token,
-                content_object=self.object,
-            )
-            if checkout.payment:
-                checkout.total = self.object.checkout_total
-                checkout.save()
-                # Create the charge on stripe's servers
-                stripe.Charge.create(
-                    amount=self.as_pennies(checkout.total), # pennies
-                    currency=CURRENCY,
-                    customer=checkout.customer.customer_id,
-                    description=checkout.description,
-                )
-            with transaction.atomic():
-                checkout.success(self.request)
-                url = self.object.checkout_success(checkout, self.request)
-                self.object = form.save()
-            process_mail.delay()
-            return HttpResponseRedirect(url)
-        except stripe.CardError as e:
-            _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
-            url = checkout.fail(self.request)
-            result = HttpResponseRedirect(url)
-        except stripe.StripeError as e:
-            message = 'checkout: {} content_object: {}'.format(
-                checkout.pk if checkout else None,
-                self.object.pk
-            )
-            log_stripe_error(logger, e, message)
-            url = checkout.fail(self.request)
-            result = HttpResponseRedirect(url)
-        return result
+        slug = form.cleaned_data['action']
+        action = CheckoutAction.objects.get(slug=slug)
+        #try:
+        customer = Customer.objects.init_customer(self.object, token)
+        checkout = Checkout.objects.pay(action, customer, self.object)
+        with transaction.atomic():
+            checkout.success(self.request)
+            url = self.object.checkout_success(checkout, self.request)
+            self.object = form.save()
+        process_mail.delay()
+        return HttpResponseRedirect(url)
+        #except stripe.CardError as e:
+        #    _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
+        #    url = checkout.fail(self.request)
+        #    result = HttpResponseRedirect(url)
+        #except stripe.StripeError as e:
+        #    message = 'checkout: {} content_object: {}'.format(
+        #        checkout.pk if checkout else None,
+        #        self.object.pk
+        #    )
+        #    log_stripe_error(logger, e, message)
+        #    url = checkout.fail(self.request)
+        #    result = HttpResponseRedirect(url)
+        #return result
 
-    def as_pennies(self, total):
-        return int(total * Decimal('100'))

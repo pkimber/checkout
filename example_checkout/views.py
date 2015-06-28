@@ -35,6 +35,9 @@ class SalesLedgerCheckoutDirectDebitUpdateView(
     form_class = SalesLedgerEmptyForm
     template_name = 'example/direct_debit.html'
 
+    def form_valid(self, form):
+        return super().form_valid(form)
+
     def get_success_url(self):
         return reverse('checkout.list.audit')
 
