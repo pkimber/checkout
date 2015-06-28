@@ -7,12 +7,6 @@ from .models import (
 )
 
 
-CHECKOUT_ACTIONS = {
-    CheckoutAction.PAYMENT: 'Pay Now',
-    CheckoutAction.PAYMENT_PLAN: 'Payment Plan',
-}
-
-
 class CheckoutForm(forms.ModelForm):
 
     action = forms.ChoiceField(widget=forms.RadioSelect)
@@ -21,7 +15,8 @@ class CheckoutForm(forms.ModelForm):
     def _action_choices(self, actions):
         result = []
         for item in actions:
-            result.append((item, CHECKOUT_ACTIONS[item]))
+            obj = CheckoutAction.objects.get(slug=item)
+            result.append((item, obj.name))
         return result
 
     def __init__(self, *args, **kwargs):
