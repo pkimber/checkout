@@ -116,11 +116,6 @@ class CheckoutMixin(object):
         ))
         return context
 
-    def form_invalid(self, form):
-        import ipdb
-        ipdb.set_trace()
-        print(form)
-
     def form_valid(self, form):
         self.object = form.save(commit=False)
         checkout = None

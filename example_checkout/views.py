@@ -15,7 +15,10 @@ from checkout.views import (
     CHECKOUT_PK,
     CheckoutMixin,
 )
-from .forms import ExampleCheckoutForm
+from .forms import (
+    SalesLedgerCheckoutForm,
+    SalesLedgerEmptyForm,
+)
 from .models import SalesLedger
 
 
@@ -25,12 +28,23 @@ class HomeView(ListView):
     template_name = 'example/home.html'
 
 
+class SalesLedgerCheckoutDirectDebitUpdateView(
+        LoginRequiredMixin, BaseMixin, UpdateView):
+
+    model = SalesLedger
+    form_class = SalesLedgerEmptyForm
+    template_name = 'example/direct_debit.html'
+
+    def get_success_url(self):
+        return reverse('checkout.list.audit')
+
+
 class SalesLedgerCheckoutUpdateView(
         LoginRequiredMixin, CheckoutMixin, BaseMixin, UpdateView):
 
     model = SalesLedger
-    form_class = ExampleCheckoutForm
-    template_name = 'example/stripe.html'
+    form_class = SalesLedgerCheckoutForm
+    template_name = 'example/checkout.html'
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

@@ -9,6 +9,7 @@ from django.views.generic import RedirectView
 
 from .views import (
     HomeView,
+    SalesLedgerCheckoutDirectDebitUpdateView,
     SalesLedgerCheckoutUpdateView,
 )
 
@@ -38,9 +39,13 @@ urlpatterns = patterns(
         view=RedirectView.as_view(url=reverse_lazy('project.home')),
         name='project.dash'
         ),
-    url(regex=r'^stripe/update/(?P<pk>\d+)/$',
+    url(regex=r'^sales/ledger/checkout/(?P<pk>\d+)/$',
         view=SalesLedgerCheckoutUpdateView.as_view(),
         name='example.sales.ledger.checkout'
+        ),
+    url(regex=r'^sales/ledger/checkout/debit/(?P<pk>\d+)/$',
+        view=SalesLedgerCheckoutDirectDebitUpdateView.as_view(),
+        name='example.sales.ledger.checkout.direct.debit'
         ),
 )
 
