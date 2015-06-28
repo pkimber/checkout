@@ -10,6 +10,7 @@ from django.views.generic import (
 from braces.views import LoginRequiredMixin
 
 from base.view_utils import BaseMixin
+from checkout.models import CheckoutAction
 from checkout.views import (
     CHECKOUT_PK,
     StripeMixin,
@@ -30,3 +31,10 @@ class SalesLedgerCheckoutUpdateView(
     model = SalesLedger
     form_class = ExampleCheckoutForm
     template_name = 'example/stripe.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update(dict(
+            actions=(CheckoutAction.PAYMENT, CheckoutAction.PAYMENT_PLAN),
+        ))
+        return kwargs
