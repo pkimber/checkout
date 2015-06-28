@@ -26,9 +26,8 @@ from .models import (
 )
 
 
+CHECKOUT_PK = 'checkout_pk'
 CURRENCY = 'GBP'
-CHECKOUT_PK = 'payment_pk'
-
 logger = logging.getLogger(__name__)
 
 
@@ -121,8 +120,7 @@ class StripeMixin(object):
         self.object = form.save(commit=False)
         checkout = None
         token = form.cleaned_data['token']
-        checkout_action = form.cleaned_data['checkout_action']
-        action = CheckoutAction.objects.get(slug=checkout_action)
+        action = CheckoutAction.objects.get(slug=form.cleaned_data['action'])
         try:
             stripe.api_key = settings.STRIPE_SECRET_KEY
             checkout = Checkout.objects.create_checkout(
@@ -144,9 +142,10 @@ class StripeMixin(object):
                     description=checkout.description,
                 )
             with transaction.atomic():
-                url = checkout.success(self.request)
+                checkout.success(self.request)
+                url = self.object.checkout_success(checkout, self.request)
+                self.object = form.save()
             process_mail.delay()
-            self.object = form.save()
             return HttpResponseRedirect(url)
         except stripe.CardError as e:
             _log_card_error(e, checkout.pk if checkout else None, self.object.pk)

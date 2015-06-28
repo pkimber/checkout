@@ -7,13 +7,9 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView
 
-#from pay.views import pay_later_view
-
 from .views import (
-    ExampleCheckout,
     HomeView,
-    #StripePaymentView,
-    StripeUpdateView,
+    SalesLedgerCheckoutUpdateView,
 )
 
 admin.autodiscover()
@@ -42,21 +38,9 @@ urlpatterns = patterns(
         view=RedirectView.as_view(url=reverse_lazy('project.home')),
         name='project.dash'
         ),
-    url(regex=r'^example/checkout/(?P<pk>\d+)/$',
-        view=ExampleCheckout.as_view(),
-        name='example.checkout'
-        ),
-    #url(regex=r'^later/(?P<pk>\d+)/$',
-    #    view=pay_later_view,
-    #    name='example.pay.later'
-    #    ),
-    #url(regex=r'^stripe/payment/(?P<pk>\d+)/$',
-    #    view=StripePaymentView.as_view(),
-    #    name='example.stripe.payment'
-    #    ),
     url(regex=r'^stripe/update/(?P<pk>\d+)/$',
-        view=StripeUpdateView.as_view(),
-        name='example.stripe.update'
+        view=SalesLedgerCheckoutUpdateView.as_view(),
+        name='example.sales.ledger.checkout'
         ),
 )
 

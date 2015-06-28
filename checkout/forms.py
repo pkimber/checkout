@@ -15,7 +15,7 @@ CHECKOUT_ACTIONS = (
 
 class CheckoutForm(forms.ModelForm):
 
-    checkout_action = forms.ChoiceField(
+    action = forms.ChoiceField(
         widget=forms.RadioSelect,
         choices=CHECKOUT_ACTIONS,
     )
@@ -24,4 +24,4 @@ class CheckoutForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['token'].widget = forms.HiddenInput()
-        self.initial['checkout_action'] = CheckoutAction.PAYMENT
+        self.initial['action'] = CheckoutAction.PAYMENT

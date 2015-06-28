@@ -18,14 +18,14 @@
 
     $('#id_checkout_form :submit').on('click', function(e) {
         // Which action has the user chosen?
-        var checkout_action = $('#id_checkout_form input[type=radio]:checked').val();
+        var action = $('#id_checkout_form input[type=radio]:checked').val();
         options = {};
-        if (checkout_action == 'payment') {
+        if (action == 'payment') {
             options = {
                 amount: {{ total }},
                 currency: "{{ currency }}"
             };
-        } else if (checkout_action == 'payment_plan') {
+        } else if (action == 'payment_plan') {
             options = {
                 panelLabel: "Setup Payment Plan"
             };

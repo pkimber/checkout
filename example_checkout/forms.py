@@ -9,5 +9,5 @@ class ExampleCheckoutForm(CheckoutForm):
     class Meta:
         model = SalesLedger
         fields = (
-            'checkout_action',
+            'action',
         )
