@@ -128,6 +128,7 @@ class CheckoutMixin(object):
             self.object = form.save()
         process_mail.delay()
         return HttpResponseRedirect(url)
+
         #except stripe.CardError as e:
         #    _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
         #    url = checkout.fail(self.request)
@@ -141,4 +142,3 @@ class CheckoutMixin(object):
         #    url = checkout.fail(self.request)
         #    result = HttpResponseRedirect(url)
         #return result
-
