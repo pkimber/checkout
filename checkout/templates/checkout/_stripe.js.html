@@ -19,6 +19,10 @@
     $('#id_checkout_form :submit').on('click', function(e) {
         // Which action has the user chosen?
         var action = $('#id_checkout_form input[type=radio]:checked').val();
+        // If only one option available then it will appear in a hidden field.
+        if (!action) {
+            action = $('#id_checkout_form #id_action').val();
+        }
         options = {};
         if (action == 'payment') {
             options = {
@@ -30,8 +34,10 @@
                 panelLabel: "Setup Payment Plan"
             };
         }
-        // Open Checkout with further options
-        handler.open(options);
+        if (action) {
+            // Open Checkout with further options
+            handler.open(options);
+        }
         e.preventDefault();
     });
 

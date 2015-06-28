@@ -22,6 +22,11 @@ class CheckoutForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         actions = kwargs.pop('actions')
         super().__init__(*args, **kwargs)
-        self.fields['action'].choices = self._action_choices(actions)
+        choices = self._action_choices(actions)
+        self.fields['action'].choices = choices
+        if len(choices) == 1:
+            self.fields['action'].widget = forms.HiddenInput()
+            self.initial['action'] = choices[0][0]
+        elif CheckoutAction.PAYMENT in actions:
+            self.initial['action'] = CheckoutAction.PAYMENT
         self.fields['token'].widget = forms.HiddenInput()
-        self.initial['action'] = CheckoutAction.PAYMENT

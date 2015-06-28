@@ -13,7 +13,7 @@ from base.view_utils import BaseMixin
 from checkout.models import CheckoutAction
 from checkout.views import (
     CHECKOUT_PK,
-    StripeMixin,
+    CheckoutMixin,
 )
 from .forms import ExampleCheckoutForm
 from .models import SalesLedger
@@ -26,7 +26,7 @@ class HomeView(ListView):
 
 
 class SalesLedgerCheckoutUpdateView(
-        LoginRequiredMixin, StripeMixin, BaseMixin, UpdateView):
+        LoginRequiredMixin, CheckoutMixin, BaseMixin, UpdateView):
 
     model = SalesLedger
     form_class = ExampleCheckoutForm
@@ -35,6 +35,7 @@ class SalesLedgerCheckoutUpdateView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update(dict(
-            actions=(CheckoutAction.PAYMENT, CheckoutAction.PAYMENT_PLAN),
+            actions=[CheckoutAction.PAYMENT, CheckoutAction.PAYMENT_PLAN],
+            #actions=[CheckoutAction.PAYMENT_PLAN],
         ))
         return kwargs

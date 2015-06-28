@@ -95,7 +95,7 @@ class CheckoutListView(
         return Checkout.objects.success()
 
 
-class StripeMixin(object):
+class CheckoutMixin(object):
 
     def _init_customer(self, email, description, token):
         """Make sure a stripe customer is created and update card (token)."""
@@ -115,6 +115,11 @@ class StripeMixin(object):
             total=self.as_pennies(self.object.checkout_total), # pennies
         ))
         return context
+
+    def form_invalid(self, form):
+        import ipdb
+        ipdb.set_trace()
+        print(form)
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
