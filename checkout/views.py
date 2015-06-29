@@ -98,6 +98,9 @@ class CheckoutListView(
 
 class CheckoutMixin(object):
 
+    def _checkout_fail(self):
+            return self.object.checkout_fail()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # TODO PJK Do I need to re-instate this?
@@ -119,31 +122,26 @@ class CheckoutMixin(object):
         token = form.cleaned_data['token']
         slug = form.cleaned_data['action']
         action = CheckoutAction.objects.get(slug=slug)
-        #try:
-        customer = Customer.objects.init_customer(self.object, token)
-        checkout = Checkout.objects.pay(action, customer, self.object)
-        with transaction.atomic():
-            checkout.success()
-            checkout.notify(self.request)
-            url = self.object.checkout_success(checkout, self.request)
-            self.object = form.save()
-        process_mail.delay()
+        try:
+            customer = Customer.objects.init_customer(self.object, token)
+            checkout = Checkout.objects.pay(action, customer, self.object)
+            with transaction.atomic():
+                self.object = form.save()
+                checkout.success()
+                checkout.notify(self.request)
+            url = self.object.checkout_success_url
+            process_mail.delay()
+        except stripe.CardError as e:
+            _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
+            with transaction.atomic():
+                checkout.fail()
+            url = self.object.fail_url
+        except stripe.StripeError as e:
+            log_stripe_error(logger, e, 'checkout: {} content_object: {}'.format(
+                checkout.pk if checkout else None,
+                self.object.pk
+            ))
+            with transaction.atomic():
+                checkout.fail()
+            url = self.object.fail_url
         return HttpResponseRedirect(url)
-
-        #except stripe.CardError as e:
-        #    _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
-        #    with transaction.atomic():
-        #        checkout.fail()
-        #        url = self.object.checkout_fail()
-        #    result = HttpResponseRedirect(url)
-        #except stripe.StripeError as e:
-        #    message = 'checkout: {} content_object: {}'.format(
-        #        checkout.pk if checkout else None,
-        #        self.object.pk
-        #    )
-        #    log_stripe_error(logger, e, message)
-        #    with transaction.atomic():
-        #        checkout.fail()
-        #        url = self.object.checkout_fail()
-        #    result = HttpResponseRedirect(url)
-        #return result
