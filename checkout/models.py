@@ -1,11 +1,16 @@
 # -*- encoding: utf-8 -*-
 import logging
 
+from dateutil.rrule import (
+    MONTHLY,
+    rrule,
+)
 from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import (
     models,
     transaction,
@@ -375,25 +380,44 @@ class PaymentPlan(TimeStampedModel):
     def __str__(self):
         return '{}'.format(self.slug)
 
+    def clean(self):
+        if not self.count:
+            raise ValidationError('Set at least one installment.')
+        if not self.deposit_percent:
+            raise ValidationError('Set an initial deposit.')
+        if not self.interval_in_months:
+            raise ValidationError('Set the number of months between installments.')
+
     def get_absolute_url(self):
         return reverse('checkout.payment.plan.detail', args=[self.pk])
 
     def sample(self, start_date, total):
-        from dateutil.rrule import (
+        # list of deposit and installment dates
+        dates = [d.date() for d in rrule(
             MONTHLY,
-            rrule,
-        )
-        result = []
-        first = True
-        deposit = total * (self.deposit_percent / Decimal('100'))
-        installment = (total - deposit) / self.count
-        for d in rrule(MONTHLY, dtstart=start_date, count=self.count+1):
-            if first:
-                first = False
+            dtstart=start_date,
+            count=self.count+1
+        )]
+        # deposit
+        deposit = (
+            total * (self.deposit_percent / Decimal('100'))
+        ).quantize(Decimal('.01'))
+        # installments
+        installment = (
+            (total - deposit) / self.count
+        ).quantize(Decimal('.01'))
+        # list of payment amounts
+        values = []
+        check = Decimal()
+        for idx, d in enumerate(dates):
+            if idx == 0:
                 value = deposit
             else:
                 value = installment
-            result.append((d.date(), value))
-        return result
+            values.append(value)
+            check = check + value
+        # make the total match
+        values[-1] = values[-1] + (total - check)
+        return list(zip(dates, values))
 
 reversion.register(PaymentPlan)
