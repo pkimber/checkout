@@ -40,14 +40,7 @@ class SalesLedgerCheckoutDirectDebitUpdateView(
     template_name = 'example/direct_debit.html'
 
     def form_valid(self, form):
-        customer = Customer.objects.get(email=self.object.checkout_email)
-        checkout = Checkout.objects.pay(
-            CheckoutAction.objects.payment,
-            customer,
-            self.object
-        )
-        with transaction.atomic():
-            checkout.success()
+        Checkout.objects.direct_debit(self.object)
         return super().form_valid(form)
 
     def get_success_url(self):

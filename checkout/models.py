@@ -6,7 +6,10 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import (
+    models,
+    transaction,
+)
 
 import reversion
 import stripe
@@ -222,6 +225,16 @@ class CheckoutManager(models.Manager):
 
     def audit(self):
         return self.model.objects.all().order_by('-pk')
+
+    def direct_debit(self, content_object):
+        customer = Customer.objects.get(email=content_object.checkout_email)
+        checkout = self.pay(
+            CheckoutAction.objects.payment,
+            customer,
+            content_object
+        )
+        with transaction.atomic():
+            checkout.success()
 
     def pay(self, action, customer, content_object):
         description=', '.join(content_object.checkout_description),
