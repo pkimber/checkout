@@ -130,11 +130,13 @@ class CheckoutMixin(object):
             url = self.object.checkout_success_url
             process_mail.delay()
         except stripe.CardError as e:
+            # TODO Move the exception handling into the model and just throw (and catch) a new 'CheckoutFail' exception.
             _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
             with transaction.atomic():
                 checkout.fail()
             url = self.object.fail_url
         except stripe.StripeError as e:
+            # TODO Move the exception handling into the model and just throw (and catch) a new 'CheckoutFail' exception.
             log_stripe_error(logger, e, 'checkout: {} content_object: {}'.format(
                 checkout.pk if checkout else None,
                 self.object.pk

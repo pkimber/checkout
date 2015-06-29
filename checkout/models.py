@@ -384,7 +384,6 @@ class PaymentPlan(TimeStampedModel):
             rrule,
         )
         result = []
-        # result.append((start_date,)) # total * (self.deposit_percent / Decimal('100')))
         first = True
         deposit = total * (self.deposit_percent / Decimal('100'))
         installment = (total - deposit) / self.count
