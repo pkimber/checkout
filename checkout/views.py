@@ -2,8 +2,6 @@
 import logging
 import stripe
 
-from decimal import Decimal
-
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction

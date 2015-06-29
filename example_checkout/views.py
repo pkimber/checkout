@@ -1,7 +1,5 @@
 # -*- encoding: utf-8 -*-
 from django.core.urlresolvers import reverse
-from django.db import transaction
-from django.http import HttpResponseRedirect
 from django.views.generic import (
     ListView,
     UpdateView,
@@ -13,12 +11,8 @@ from base.view_utils import BaseMixin
 from checkout.models import (
     Checkout,
     CheckoutAction,
-    Customer,
 )
-from checkout.views import (
-    CHECKOUT_PK,
-    CheckoutMixin,
-)
+from checkout.views import CheckoutMixin
 from .forms import (
     SalesLedgerCheckoutForm,
     SalesLedgerEmptyForm,

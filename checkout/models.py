@@ -237,7 +237,6 @@ class CheckoutManager(models.Manager):
             checkout.success()
 
     def pay(self, action, customer, content_object):
-        description=', '.join(content_object.checkout_description),
         obj = self._create_checkout(
             action,
             customer,

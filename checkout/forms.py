@@ -1,10 +1,7 @@
 # -*- encoding: utf-8 -*-
 from django import forms
 
-from .models import (
-    Checkout,
-    CheckoutAction,
-)
+from .models import CheckoutAction
 
 
 class CheckoutForm(forms.ModelForm):
