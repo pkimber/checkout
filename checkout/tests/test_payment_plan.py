@@ -36,7 +36,7 @@ def test_interval_greater_zero():
 
 
 @pytest.mark.django_db
-def test_illustration():
+def test_illustration_simple():
     plan = PaymentPlanFactory()
     result = plan.illustration(date(2015, 7, 1), Decimal('100'))
     assert [
@@ -47,7 +47,7 @@ def test_illustration():
 
 
 @pytest.mark.django_db
-def test_illustration_example():
+def test_illustration_typical():
     plan = PaymentPlanFactory(
         deposit=15,
         count=6,
@@ -82,13 +82,11 @@ def test_illustration_awkward():
 
 
 @pytest.mark.django_db
-def test_sample():
+def test_example():
     plan = PaymentPlanFactory(
         deposit=50,
-        count=3,
+        count=2,
         interval=1
     )
-    assert (
-        'For a total of £600, we pay an initial deposit of £300.00 followed '
-        'by 2 payments of £100.00 and a final payment of £100.00'
-    ) == plan.sample
+    result = [item[1] for item in plan.example]
+    assert [Decimal('50'), Decimal('25'), Decimal('25')] == result

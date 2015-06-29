@@ -28,7 +28,7 @@
                 Name
               </td>
               <td>
-                Plan
+                Example
               </td>
             </tr>
           </tbody>
@@ -40,18 +40,29 @@
                     <i class="fa fa-edit"></i>
                     {{ payment_plan.name }}
                   </a>
-                </td>
-                <td>
-                  Initial payment of
+                  <br />
+                  Initial deposit of
                   {{ payment_plan.deposit }}%
                   followed by
                   {{ payment_plan.count }}
-                  payments at an interval of
-                  {{ payment_plan.interval }} month(s)
-                  <br />
+                  payments at
+                  {{ payment_plan.interval }}
+                  month intervals.
+                </td>
+                <td>
                   <small>
-                    e.g.
-                    {{ payment_plan.sample }}
+                    e.g. for &pound;<strong>100</strong>
+                    <br />
+                    {% for item in payment_plan.sample %}
+                      {% if forloop.first %}
+                        &pound;{{ item.1 }}&nbsp;deposit
+                      {% elif forloop.last %}
+                        &pound;{{ item.1 }}&nbsp;final
+                      {% else %}
+                        &pound;{{ item.1 }}
+                      {% endif %}
+                      <br />
+                    {% endfor %}
                   </small>
                 </td>
               </tr>

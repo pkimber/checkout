@@ -420,19 +420,7 @@ class PaymentPlan(TimeStampedModel):
         return list(zip(dates, values))
 
     @property
-    def sample(self):
-        total = Decimal('600')
-        illustration = self.illustration(date.today(), Decimal('600'))
-        return (
-            "For a total of £{}, we pay an initial deposit of £{} "
-            "followed by {} payments of £{} "
-            "and a final payment of £{}"
-        ).format(
-            total,
-            illustration[0][1],
-            len(illustration)-2,
-            illustration[1][1],
-            illustration[-1][1],
-        )
+    def example(self):
+        return self.illustration(date.today(), Decimal('100'))
 
 reversion.register(PaymentPlan)
