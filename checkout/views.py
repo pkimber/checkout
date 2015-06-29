@@ -123,7 +123,8 @@ class CheckoutMixin(object):
         customer = Customer.objects.init_customer(self.object, token)
         checkout = Checkout.objects.pay(action, customer, self.object)
         with transaction.atomic():
-            checkout.success(self.request)
+            checkout.success()
+            checkout.notify(self.request)
             url = self.object.checkout_success(checkout, self.request)
             self.object = form.save()
         process_mail.delay()
@@ -131,7 +132,9 @@ class CheckoutMixin(object):
 
         #except stripe.CardError as e:
         #    _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
-        #    url = checkout.fail(self.request)
+        #    with transaction.atomic():
+        #        checkout.fail()
+        #        url = self.object.checkout_fail()
         #    result = HttpResponseRedirect(url)
         #except stripe.StripeError as e:
         #    message = 'checkout: {} content_object: {}'.format(
@@ -139,6 +142,8 @@ class CheckoutMixin(object):
         #        self.object.pk
         #    )
         #    log_stripe_error(logger, e, message)
-        #    url = checkout.fail(self.request)
+        #    with transaction.atomic():
+        #        checkout.fail()
+        #        url = self.object.checkout_fail()
         #    result = HttpResponseRedirect(url)
         #return result

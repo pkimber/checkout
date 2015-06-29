@@ -56,12 +56,11 @@ class SalesLedger(models.Model):
     def checkout_email(self):
         return self.email
 
-    @property
     def checkout_fail(self):
         """just for testing."""
         return reverse('checkout.list.audit')
 
-    def checkout_success(self, checkout, request):
+    def checkout_success(self, checkout):
         """just for testing."""
         return reverse('checkout.list')
 

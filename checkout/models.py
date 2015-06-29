@@ -272,7 +272,28 @@ class Checkout(TimeStampedModel):
     def __str__(self):
         return '{}'.format(self.customer.email)
 
-    def _notify(self, request):
+    def _success_or_fail(self, state):
+        self.state = state
+        self.save()
+
+    @property
+    def content_object_url(self):
+        try:
+            return self.content_object.get_absolute_url()
+        except AttributeError:
+            return None
+
+    @property
+    def fail(self):
+        """Checkout failed - so update and notify admin."""
+        self._success_or_fail(CheckoutState.objects.fail)
+
+    @property
+    def failed(self):
+        """Did the checkout request fail?"""
+        return self.state == CheckoutState.objects.fail
+
+    def notify(self, request):
         email_addresses = [n.email for n in Notify.objects.all()]
         if email_addresses:
             caption = self.action.name
@@ -302,36 +323,13 @@ class Checkout(TimeStampedModel):
                 "No email addresses set-up in 'enquiry.models.Notify'"
             )
 
-    def _success_or_fail(self, state, request):
-        self.state = state
-        self.save()
-        self._notify(request)
-
-    @property
-    def content_object_url(self):
-        try:
-            return self.content_object.get_absolute_url()
-        except AttributeError:
-            return None
-
-    @property
-    def fail(self, request):
-        """Checkout failed - so update and notify admin."""
-        self._success_or_fail(CheckoutState.objects.fail, request)
-        return self.content_object.checkout_fail
-
-    @property
-    def failed(self):
-        """Did the checkout request fail?"""
-        return self.state == CheckoutState.objects.fail
-
     @property
     def payment(self):
         """Is this a payment action."""
         return self.action == CheckoutAction.objects.payment
 
-    def success(self, request):
+    def success(self):
         """Checkout successful - so update and notify admin."""
-        self._success_or_fail(CheckoutState.objects.success, request)
+        self._success_or_fail(CheckoutState.objects.success)
 
 reversion.register(Checkout)

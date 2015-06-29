@@ -48,6 +48,7 @@ class SalesLedgerCheckoutDirectDebitUpdateView(
         )
         with transaction.atomic():
             checkout.success(self.request)
+            self.object.checkout_success(checkout)
         return super().form_valid(form)
 
     def get_success_url(self):

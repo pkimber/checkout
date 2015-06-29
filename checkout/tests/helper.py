@@ -26,10 +26,10 @@ def check_checkout(model_instance):
     model_instance.checkout_total
     # model_instance.checkout_state
     # model_instance.set_checkout_state(CheckoutState.objects.success)
-    url = model_instance.checkout_fail
+    url = model_instance.checkout_fail()
     if not url:
         raise CheckoutError("{}.checkout_fail' should return a url")
-    url = model_instance.checkout_success(None, None)
+    url = model_instance.checkout_success(None)
     if not url:
         raise CheckoutError("{}.checkout_success' should return a url")
     # do we have mail templates for paid and pay later?
