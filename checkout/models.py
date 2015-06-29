@@ -347,3 +347,54 @@ class Checkout(TimeStampedModel):
         return self.content_object.checkout_success()
 
 reversion.register(Checkout)
+
+
+class PaymentPlanManager(models.Manager):
+
+    def current(self):
+        """List of payment plan headers excluding 'deleted'."""
+        return self.model.objects.exclude(deleted=True)
+
+
+class PaymentPlan(TimeStampedModel):
+    """Definition of a payment plan."""
+
+    name = models.TextField()
+    slug = models.SlugField(unique=True)
+    deposit_percent = models.IntegerField()
+    count = models.IntegerField()
+    interval_in_months = models.IntegerField()
+    deleted = models.BooleanField(default=False)
+    objects = PaymentPlanManager()
+
+    class Meta:
+        ordering = ('slug',)
+        verbose_name = 'Payment plan'
+        verbose_name_plural = 'Payment plan'
+
+    def __str__(self):
+        return '{}'.format(self.slug)
+
+    def get_absolute_url(self):
+        return reverse('checkout.payment.plan.detail', args=[self.pk])
+
+    def sample(self, start_date, total):
+        from dateutil.rrule import (
+            MONTHLY,
+            rrule,
+        )
+        result = []
+        # result.append((start_date,)) # total * (self.deposit_percent / Decimal('100')))
+        first = True
+        deposit = total * (self.deposit_percent / Decimal('100'))
+        installment = (total - deposit) / self.count
+        for d in rrule(MONTHLY, dtstart=start_date, count=self.count+1):
+            if first:
+                first = False
+                value = deposit
+            else:
+                value = installment
+            result.append((d.date(), value))
+        return result
+
+reversion.register(PaymentPlan)

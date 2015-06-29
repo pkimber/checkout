@@ -4,6 +4,7 @@ import factory
 from checkout.models import (
     Checkout,
     Customer,
+    PaymentPlan,
 )
 
 
@@ -23,3 +24,13 @@ class CheckoutFactory(factory.django.DjangoModelFactory):
         model = Checkout
 
     customer = factory.SubFactory(CustomerFactory)
+
+
+class PaymentPlanFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = PaymentPlan
+
+    deposit_percent = 20
+    count = 2
+    interval_in_months = 1
