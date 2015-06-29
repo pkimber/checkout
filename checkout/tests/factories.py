@@ -31,6 +31,6 @@ class PaymentPlanFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = PaymentPlan
 
-    deposit_percent = 20
+    deposit = 20
     count = 2
-    interval_in_months = 1
+    interval = 1

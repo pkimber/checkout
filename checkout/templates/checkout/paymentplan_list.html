@@ -1,0 +1,74 @@
+{% extends 'checkout/base.html' %}
+{% load static %}
+
+{% block title %}
+  Payment Plans
+{% endblock title %}
+
+{% block sub_heading %}
+  Payment Plans
+{% endblock sub_heading %}
+
+{% block content %}
+  {% include 'checkout/_checkout_menu.html' %}
+  {% if is_paginated %}
+    <div class="pure-g">
+      <div class="pure-u-1">
+        {% include 'base/_paginate.html' %}
+      </div>
+    </div>
+  {% endif %}
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <div class="l-box">
+        <table class="pure-table pure-table-bordered" width="100%">
+          <thead>
+            <tr valign="top">
+              <td>
+                Name
+              </td>
+              <td>
+                Plan
+              </td>
+            </tr>
+          </tbody>
+          <tbody>
+            {% for payment_plan in object_list %}
+              <tr valign="top">
+                <td>
+                  <a href="{% url 'checkout.payment.plan.update' payment_plan.pk %}">
+                    <i class="fa fa-edit"></i>
+                    {{ payment_plan.name }}
+                  </a>
+                </td>
+                <td>
+                  Initial payment of
+                  {{ payment_plan.deposit }}%
+                  followed by
+                  {{ payment_plan.count }}
+                  payments at an interval of
+                  {{ payment_plan.interval }} month(s)
+                  <br />
+                  <small>
+                    e.g.
+                    {{ payment_plan.sample }}
+                  </small>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="pure-menu pure-menu-horizontal">
+    <ul class="pure-menu-list">
+      <li class="pure-menu-item">
+        <a href="{% url 'checkout.payment.plan.create' %}" class="pure-menu-link">
+          <i class="fa fa-plus"></i>
+          Create a new payment plan...
+        </a>
+      </li>
+    </ul>
+  </div>
+{% endblock content %}

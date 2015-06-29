@@ -4,9 +4,15 @@ import stripe
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.views.generic import ListView
+from django.views.generic import (
+    CreateView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
 from braces.views import (
     LoginRequiredMixin,
@@ -16,6 +22,10 @@ from braces.views import (
 from base.view_utils import BaseMixin
 from mail.tasks import process_mail
 
+from .forms import (
+    PaymentPlanEmptyForm,
+    PaymentPlanForm,
+)
 from .models import (
     as_pennies,
     Checkout,
@@ -23,6 +33,7 @@ from .models import (
     CURRENCY,
     Customer,
     log_stripe_error,
+    PaymentPlan,
 )
 
 
@@ -145,3 +156,51 @@ class CheckoutMixin(object):
                 checkout.fail()
             url = self.object.fail_url
         return HttpResponseRedirect(url)
+
+
+class PaymentPlanCreateView(
+        LoginRequiredMixin, StaffuserRequiredMixin, BaseMixin, CreateView):
+
+    form_class = PaymentPlanForm
+    model = PaymentPlan
+
+    def get_success_url(self):
+        return reverse('checkout.payment.plan.list')
+
+
+class PaymentPlanDeleteView(
+        LoginRequiredMixin, StaffuserRequiredMixin, BaseMixin, UpdateView):
+
+    form_class = PaymentPlanEmptyForm
+    model = PaymentPlan
+    template_name = 'checkout/paymentplan_delete.html'
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            self.object = form.save(commit=False)
+            self.object.deleted = True
+            self.object = form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse('checkout.payment.plan.list')
+
+
+class PaymentPlanListView(
+        LoginRequiredMixin, StaffuserRequiredMixin,
+        BaseMixin, ListView):
+
+    paginate_by = 5
+
+    def get_queryset(self):
+        return PaymentPlan.objects.current()
+
+
+class PaymentPlanUpdateView(
+        LoginRequiredMixin, StaffuserRequiredMixin, BaseMixin, UpdateView):
+
+    form_class = PaymentPlanForm
+    model = PaymentPlan
+
+    def get_success_url(self):
+        return reverse('checkout.payment.plan.list')

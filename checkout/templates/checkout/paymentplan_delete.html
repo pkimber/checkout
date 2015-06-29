@@ -1,0 +1,25 @@
+{% extends 'checkout/base.html' %}
+{% load static %}
+
+{% block title %}
+  Delete Payment Plan
+{% endblock title %}
+
+{% block sub_heading %}
+  Delete Payment Plan
+{% endblock sub_heading %}
+
+{% block content %}
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <h4>
+        Click 'Delete' to remove this payment plan:
+      </h4>
+      <p>
+        {{ object.slug }}:
+        {{ object.name }}
+      </p>
+      {% include '_form.html' with submit='Delete' %}
+    </div>
+  </div>
+{% endblock content %}

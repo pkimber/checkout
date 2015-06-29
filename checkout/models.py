@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 import logging
 
+from datetime import date
 from dateutil.rrule import (
     MONTHLY,
     rrule,
@@ -11,6 +12,7 @@ from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
 from django.db import (
     models,
     transaction,
@@ -366,9 +368,9 @@ class PaymentPlan(TimeStampedModel):
 
     name = models.TextField()
     slug = models.SlugField(unique=True)
-    deposit_percent = models.IntegerField()
-    count = models.IntegerField()
-    interval_in_months = models.IntegerField()
+    deposit = models.IntegerField(help_text='Initial deposit as a percentage')
+    count = models.IntegerField(help_text='Number of payments')
+    interval = models.IntegerField(help_text='Payment interval in months')
     deleted = models.BooleanField(default=False)
     objects = PaymentPlanManager()
 
@@ -383,15 +385,12 @@ class PaymentPlan(TimeStampedModel):
     def clean(self):
         if not self.count:
             raise ValidationError('Set at least one installment.')
-        if not self.deposit_percent:
+        if not self.deposit:
             raise ValidationError('Set an initial deposit.')
-        if not self.interval_in_months:
+        if not self.interval:
             raise ValidationError('Set the number of months between installments.')
 
-    def get_absolute_url(self):
-        return reverse('checkout.payment.plan.detail', args=[self.pk])
-
-    def sample(self, start_date, total):
+    def illustration(self, start_date, total):
         # list of deposit and installment dates
         dates = [d.date() for d in rrule(
             MONTHLY,
@@ -400,7 +399,7 @@ class PaymentPlan(TimeStampedModel):
         )]
         # deposit
         deposit = (
-            total * (self.deposit_percent / Decimal('100'))
+            total * (self.deposit / Decimal('100'))
         ).quantize(Decimal('.01'))
         # installments
         installment = (
@@ -419,5 +418,21 @@ class PaymentPlan(TimeStampedModel):
         # make the total match
         values[-1] = values[-1] + (total - check)
         return list(zip(dates, values))
+
+    @property
+    def sample(self):
+        total = Decimal('600')
+        illustration = self.illustration(date.today(), Decimal('600'))
+        return (
+            "For a total of £{}, we pay an initial deposit of £{} "
+            "followed by {} payments of £{} "
+            "and a final payment of £{}"
+        ).format(
+            total,
+            illustration[0][1],
+            len(illustration)-2,
+            illustration[1][1],
+            illustration[-1][1],
+        )
 
 reversion.register(PaymentPlan)

@@ -16,34 +16,7 @@
 {% endblock sub_heading %}
 
 {% block content %}
-  <div class="pure-g">
-    <div class="pure-u-1">
-      <div class="pure-menu pure-menu-horizontal">
-        <ul class="pure-menu-list">
-          <li class="pure-menu-item">
-            <a href="{% url 'project.settings' %}" class="pure-menu-link">
-              <i class="fa fa-reply"></i>
-            </a>
-          </li>
-          {% if audit %}
-            <li class="pure-menu-item">
-              <a href="{% url 'checkout.list' %}" class="pure-menu-link">
-                <i class="fa fa-shopping-cart"></i>
-                Checkout
-              </a>
-            </li>
-          {% else %}
-            <li class="pure-menu-item">
-              <a href="{% url 'checkout.list.audit' %}" class="pure-menu-link">
-                <i class="fa fa-shopping-cart"></i>
-                Audit
-              </a>
-            </li>
-          {% endif %}
-        </ul>
-      </div>
-    </div>
-  </div>
+  {% include 'checkout/_checkout_menu.html' %}
   <div class="pure-g">
     <div class="pure-u-1">
       {% include 'base/_paginate.html' %}

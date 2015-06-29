@@ -1,0 +1,31 @@
+<div class="pure-g">
+  <div class="pure-u-1">
+    <div class="pure-menu pure-menu-horizontal">
+      <ul class="pure-menu-list">
+        <li class="pure-menu-item">
+          <a href="{% url 'project.settings' %}" class="pure-menu-link">
+            <i class="fa fa-reply"></i>
+          </a>
+        </li>
+        <li class="pure-menu-item">
+          <a href="{% url 'checkout.list' %}" class="pure-menu-link">
+            <i class="fa fa-shopping-cart"></i>
+            Checkout
+          </a>
+        </li>
+        <li class="pure-menu-item">
+          <a href="{% url 'checkout.list.audit' %}" class="pure-menu-link">
+            <i class="fa fa-shopping-cart"></i>
+            Audit
+          </a>
+        </li>
+        <li class="pure-menu-item">
+          <a href="{% url 'checkout.payment.plan.list' %}" class="pure-menu-link">
+            <i class="fa fa-shopping-cart"></i>
+            Payment Plans
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

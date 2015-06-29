@@ -1,7 +1,10 @@
 # -*- encoding: utf-8 -*-
 from django import forms
 
-from .models import CheckoutAction
+from .models import (
+    CheckoutAction,
+    PaymentPlan,
+)
 
 
 class CheckoutForm(forms.ModelForm):
@@ -27,3 +30,29 @@ class CheckoutForm(forms.ModelForm):
         elif CheckoutAction.PAYMENT in actions:
             self.initial['action'] = CheckoutAction.PAYMENT
         self.fields['token'].widget = forms.HiddenInput()
+
+
+class PaymentPlanEmptyForm(forms.ModelForm):
+
+    class Meta:
+        model = PaymentPlan
+        fields = ()
+
+
+class PaymentPlanForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].widget.attrs.update(
+            {'class': 'pure-input-1-2', 'rows': 4}
+        )
+
+    class Meta:
+        model = PaymentPlan
+        fields = (
+            'slug',
+            'name',
+            'deposit',
+            'count',
+            'interval',
+        )

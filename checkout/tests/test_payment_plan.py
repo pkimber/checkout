@@ -16,29 +16,29 @@ def test_factory():
 
 @pytest.mark.django_db
 def test_count_greater_zero():
-    obj = PaymentPlanFactory(deposit_percent=10, count=0, interval_in_months=1)
+    obj = PaymentPlanFactory(deposit=10, count=0, interval=1)
     with pytest.raises(ValidationError):
         obj.full_clean()
 
 
 @pytest.mark.django_db
 def test_deposit_greater_zero():
-    obj = PaymentPlanFactory(deposit_percent=0, count=6, interval_in_months=1)
+    obj = PaymentPlanFactory(deposit=0, count=6, interval=1)
     with pytest.raises(ValidationError):
         obj.full_clean()
 
 
 @pytest.mark.django_db
-def test_interval_in_months_greater_zero():
-    obj = PaymentPlanFactory(deposit_percent=10, count=6, interval_in_months=0)
+def test_interval_greater_zero():
+    obj = PaymentPlanFactory(deposit=10, count=6, interval=0)
     with pytest.raises(ValidationError):
         obj.full_clean()
 
 
 @pytest.mark.django_db
-def test_sample():
+def test_illustration():
     plan = PaymentPlanFactory()
-    result = plan.sample(date(2015, 7, 1), Decimal('100'))
+    result = plan.illustration(date(2015, 7, 1), Decimal('100'))
     assert [
         (date(2015, 7, 1), Decimal('20')),
         (date(2015, 8, 1), Decimal('40')),
@@ -47,13 +47,13 @@ def test_sample():
 
 
 @pytest.mark.django_db
-def test_sample_example():
+def test_illustration_example():
     plan = PaymentPlanFactory(
-        deposit_percent=15,
+        deposit=15,
         count=6,
-        interval_in_months=1
+        interval=1
     )
-    result = plan.sample(date(2015, 7, 6), Decimal('600'))
+    result = plan.illustration(date(2015, 7, 6), Decimal('600'))
     assert [
         (date(2015, 7, 6), Decimal('90')),
         (date(2015, 8, 6), Decimal('85')),
@@ -66,16 +66,29 @@ def test_sample_example():
 
 
 @pytest.mark.django_db
-def test_sample_awkward():
+def test_illustration_awkward():
     plan = PaymentPlanFactory(
-        deposit_percent=50,
+        deposit=50,
         count=3,
-        interval_in_months=1
+        interval=1
     )
-    result = plan.sample(date(2015, 7, 1), Decimal('200'))
+    result = plan.illustration(date(2015, 7, 1), Decimal('200'))
     assert [
         (date(2015, 7, 1), Decimal('100')),
         (date(2015, 8, 1), Decimal('33.33')),
         (date(2015, 9, 1), Decimal('33.33')),
         (date(2015, 10, 1), Decimal('33.34')),
     ] == result
+
+
+@pytest.mark.django_db
+def test_sample():
+    plan = PaymentPlanFactory(
+        deposit=50,
+        count=3,
+        interval=1
+    )
+    assert (
+        'For a total of £600, we pay an initial deposit of £300.00 followed '
+        'by 2 payments of £100.00 and a final payment of £100.00'
+    ) == plan.sample
