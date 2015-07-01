@@ -3,8 +3,12 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 
-from example_checkout.models import SalesLedger
+from example_checkout.models import (
+    Contact,
+    SalesLedger,
+)
 from finance.models import VatSettings
+from login.tests.scenario import get_user_web
 from mail.models import Notify
 from stock.models import (
     Product,
@@ -28,10 +32,11 @@ class Command(BaseCommand):
         pencil = Product.objects.create_product(
             'pencil', 'Pencil', '', Decimal('1.32'), stationery
         )
+        contact = Contact.objects.create_contact(user=get_user_web())
         SalesLedger.objects.create_sales_ledger(
-            'Patrick', 'patrick@test.com', pencil, 2
+            contact, pencil, 2
         )
         SalesLedger.objects.create_sales_ledger(
-            'Andrea', 'andrea@test.com', pencil, 1
+            contact, pencil, 1
         )
         print("Created 'checkout' demo data...")

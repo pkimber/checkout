@@ -1,8 +1,20 @@
 # -*- encoding: utf-8 -*-
 import factory
 
-from example_checkout.models import SalesLedger
+from example_checkout.models import (
+    Contact,
+    SalesLedger,
+)
+from login.tests.factories import UserFactory
 from stock.tests.factories import ProductFactory
+
+
+class ContactFactory(factory.django.DjangoModelFactory):
+
+    user = factory.SubFactory(UserFactory)
+
+    class Meta:
+        model = Contact
 
 
 class SalesLedgerFactory(factory.django.DjangoModelFactory):
@@ -10,13 +22,6 @@ class SalesLedgerFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SalesLedger
 
+    contact = factory.SubFactory(ContactFactory)
     product = factory.SubFactory(ProductFactory)
     quantity = 1
-
-    @factory.sequence
-    def email(n):
-        return '{:02d}@pkimber.net'.format(n)
-
-    @factory.sequence
-    def name(n):
-        return 'name_{:02d}'.format(n)

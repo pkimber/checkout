@@ -1,16 +1,50 @@
 # -*- encoding: utf-8 -*-
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db import models
 
 from stock.models import Product
 
 
+class ContactManager(models.Manager):
+
+    def create_contact(self, user):
+        obj = self.model(
+            user=user,
+        )
+        obj.save()
+        return obj
+
+
+class Contact(models.Model):
+    """Contact."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL)
+    address_1 = models.CharField('Address', max_length=100, blank=True)
+    address_2 = models.CharField('', max_length=100, blank=True)
+    address_3 = models.CharField('', max_length=100, blank=True)
+    town = models.CharField(max_length=100, blank=True)
+    county = models.CharField(max_length=100, blank=True)
+    postcode = models.CharField(max_length=20, blank=True)
+    objects = ContactManager()
+
+    class Meta:
+        ordering = ('user__last_name', 'user__first_name')
+        verbose_name = 'Contact'
+        verbose_name_plural = 'Contacts'
+
+    def __str__(self):
+        return '{} {}'.format(
+            self.user.first_name,
+            self.user.last_name,
+        )
+
+
 class SalesLedgerManager(models.Manager):
 
-    def create_sales_ledger(self, name, email, product, quantity):
+    def create_sales_ledger(self, contact, product, quantity):
         obj = self.model(
-            name=name,
-            email=email,
+            contact=contact,
             product=product,
             quantity=quantity,
         )
@@ -21,8 +55,7 @@ class SalesLedgerManager(models.Manager):
 class SalesLedger(models.Model):
     """List of prices."""
 
-    name = models.CharField(max_length=100)
-    email = models.EmailField()
+    contact = models.ForeignKey(Contact)
     product = models.ForeignKey(Product)
     quantity = models.IntegerField()
     objects = SalesLedgerManager()
@@ -41,7 +74,10 @@ class SalesLedger(models.Model):
 
     @property
     def checkout_name(self):
-        return self.name
+        return '{} {}'.format(
+            self.contact.user.first_name,
+            self.contact.user.last_name,
+        )
 
     @property
     def checkout_description(self):
@@ -54,7 +90,7 @@ class SalesLedger(models.Model):
 
     @property
     def checkout_email(self):
-        return self.email
+        return self.contact.user.email
 
     def checkout_fail(self):
         pass
