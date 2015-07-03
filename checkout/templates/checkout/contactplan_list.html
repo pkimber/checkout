@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block title %}
-  Payment Plan Setup
+  Payment Plans
 {% endblock title %}
 
 {% block sub_heading %}
-  Payment Plan Setup
+  Payment Plans
 {% endblock sub_heading %}
 
 {% block content %}
@@ -28,39 +28,44 @@
                 Name
               </td>
               <td>
-                Example
+                Created
+              </td>
+              <td>
+                Payments
               </td>
             </tr>
           </tbody>
           <tbody>
-            {% for payment_plan in object_list %}
+            {% for o in object_list %}
               <tr valign="top">
                 <td>
-                  <a href="{% url 'checkout.payment.plan.update' payment_plan.pk %}">
-                    <i class="fa fa-edit"></i>
-                    {{ payment_plan.name }}
+                  {{ o.contact.user.get_full_name }}
+                  <br />
+                  <a href="mailto:{{ o.contact.user.email }}?subject=Payment Plan" target="_blank">
+                    {{ o.contact.user.email }}
                   </a>
                   <br />
-                  Initial deposit of
-                  {{ payment_plan.deposit }}%
-                  followed by
-                  {{ payment_plan.count }}
-                  payments at
-                  {{ payment_plan.interval }}
-                  month intervals.
+                  <small>
+                    {{ o.payment_plan.name }}
+                  </small>
+                </td>
+                <td>
+                  {{ o.created|date:'d/m/Y' }}
+                  <br />
+                  {{ o.created|date:'H:i' }}
                 </td>
                 <td>
                   <small>
-                    e.g. for &pound;<strong>100</strong>
-                    <br />
-                    {% for item in payment_plan.sample %}
+                    {% for item in o.payments %}
+                      {{ item.count }}.
+                      {{ item.due|date:'d/m/Y' }}
+                      &pound;{{ item.amount }}
                       {% if forloop.first %}
-                        &pound;{{ item.1 }}&nbsp;deposit
+                        deposit
                       {% elif forloop.last %}
-                        &pound;{{ item.1 }}&nbsp;final
-                      {% else %}
-                        &pound;{{ item.1 }}
+                        final
                       {% endif %}
+                      ({{ item.state.name }})
                       <br />
                     {% endfor %}
                   </small>
@@ -71,15 +76,5 @@
         </table>
       </div>
     </div>
-  </div>
-  <div class="pure-menu pure-menu-horizontal">
-    <ul class="pure-menu-list">
-      <li class="pure-menu-item">
-        <a href="{% url 'checkout.payment.plan.create' %}" class="pure-menu-link">
-          <i class="fa fa-plus"></i>
-          Create a new payment plan...
-        </a>
-      </li>
-    </ul>
   </div>
 {% endblock content %}

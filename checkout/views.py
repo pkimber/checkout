@@ -30,6 +30,7 @@ from .models import (
     as_pennies,
     Checkout,
     CheckoutAction,
+    ContactPlan,
     CURRENCY,
     Customer,
     log_stripe_error,
@@ -156,6 +157,14 @@ class CheckoutMixin(object):
                 checkout.fail()
             url = self.object.fail_url
         return HttpResponseRedirect(url)
+
+
+class ContactPlanListView(
+        LoginRequiredMixin, StaffuserRequiredMixin,
+        BaseMixin, ListView):
+
+    model = ContactPlan
+    paginate_by = 10
 
 
 class PaymentPlanCreateView(

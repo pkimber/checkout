@@ -194,6 +194,12 @@ def test_factory():
 
 @pytest.mark.django_db
 def test_process_payments():
+    """Process payments.
+
+    I cannot get this to run as a test because I don't know how to create a
+    test Stripe customer.
+
+    """
     today = date.today()
     ContactPlanPaymentFactory(
         due=today+relativedelta(days=1),
@@ -203,7 +209,8 @@ def test_process_payments():
         due=today+relativedelta(days=2),
         amount=Decimal('2')
     )
-    ContactPlanPayment.objects.process_payments
+    # TODO Uncomment this if I can work out how to create a test Stripe customer
+    # ContactPlanPayment.objects.process_payments
 
 
 @pytest.mark.django_db

@@ -7,6 +7,7 @@ from django.conf.urls import (
 from .views import (
     CheckoutAuditListView,
     CheckoutListView,
+    ContactPlanListView,
     PaymentPlanCreateView,
     PaymentPlanDeleteView,
     PaymentPlanListView,
@@ -23,6 +24,10 @@ urlpatterns = patterns(
     url(regex=r'^$',
         view=CheckoutListView.as_view(),
         name='checkout.list'
+        ),
+    url(regex=r'^contact/plan/$',
+        view=ContactPlanListView.as_view(),
+        name='checkout.contact.plan.list'
         ),
     url(regex=r'^payment/plan/$',
         view=PaymentPlanListView.as_view(),

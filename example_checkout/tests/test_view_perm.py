@@ -14,3 +14,6 @@ class TestViewPerm(PermTestCase):
 
     def test_checkout_list_audit(self):
         self.assert_staff_only(reverse('checkout.list.audit'))
+
+    def test_checkout_contact_plan_list(self):
+        self.assert_staff_only(reverse('checkout.contact.plan.list'))

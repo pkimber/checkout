@@ -376,6 +376,17 @@ reversion.register(Checkout)
 
 class PaymentPlanManager(models.Manager):
 
+    def create_payment_plan(self, slug, name, deposit, count, interval):
+        obj = self.model(
+            slug=slug,
+            name=name,
+            deposit=deposit,
+            count=count,
+            interval=interval,
+        )
+        obj.save()
+        return obj
+
     def current(self):
         """List of payment plan headers excluding 'deleted'."""
         return self.model.objects.exclude(deleted=True)
