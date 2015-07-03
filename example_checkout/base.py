@@ -212,6 +212,8 @@ CELERY_DISABLE_RATE_LIMITS = True
 # django-compressor
 COMPRESS_ENABLED = False # defaults to the opposite of DEBUG
 
+CONTACT_MODEL = 'example_checkout.Contact'
+
 FTP_STATIC_DIR = None
 FTP_STATIC_URL = None
 

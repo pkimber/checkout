@@ -424,3 +424,42 @@ class PaymentPlan(TimeStampedModel):
         return self.illustration(date.today(), Decimal('100'))
 
 reversion.register(PaymentPlan)
+
+
+class ContactPlan(TimeStampedModel):
+    """Payment plan for a contact."""
+
+    contact = models.ForeignKey(settings.CONTACT_MODEL)
+    payment_plan = models.ForeignKey(PaymentPlan)
+
+    class Meta:
+        ordering = ('contact__user__username', 'payment_plan__slug')
+        verbose_name = 'Contact payment plan'
+        verbose_name_plural = 'Contact payment plans'
+
+    def __str__(self):
+        return '{} {}'.format(self.contact.user.username, self.payment_plan.name)
+
+reversion.register(ContactPlan)
+
+
+class ContactPlanPayment(TimeStampedModel):
+    """Payments for a contact."""
+
+    plan = models.ForeignKey(ContactPlan)
+    due = models.DateField()
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+
+    class Meta:
+        verbose_name = 'Payments for a contact'
+        verbose_name_plural = 'Payments for a contact'
+
+    def __str__(self):
+        return '{} {} {} {}'.format(
+            self.plan.contact.user.username,
+            self.plan.payment_plan.name,
+            self.due,
+            self.amount,
+        )
+
+reversion.register(ContactPlanPayment)
