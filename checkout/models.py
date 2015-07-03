@@ -239,7 +239,20 @@ class CheckoutManager(models.Manager):
         return self.model.objects.all().order_by('-pk')
 
     def direct_debit(self, content_object):
-        customer = Customer.objects.get(email=content_object.checkout_email)
+        """Collect some money from a customer.
+
+        We should only attempt to collect money if the customer has already
+        entered their card details.
+
+        """
+        try:
+            customer = Customer.objects.get(
+                email=content_object.checkout_email
+            )
+        except Customer.DoesNotExist as e:
+            raise CheckoutError(
+                'Customer has not registered a card'
+            ) from e
         checkout = self.pay(
             CheckoutAction.objects.payment,
             customer,
@@ -510,19 +523,31 @@ class ContactPlanPaymentManager(models.Manager):
 
     @property
     def process_payments(self):
+        """Process pending payments.
+
+        We set the status to 'request' before asking for the money.  This is
+        because we can't put the payment request into a transaction.  If we are
+        not careful, we could have a situation where the payment succeeds and
+        we don't manage to set the state to 'success'.  In the code below, if
+        the payment fails the record will be left in the 'request' state and
+        so we won't not ask for the money again.
+
+        """
         pks = [o.pk for o in self.due]
         for pk in pks:
             with transaction.atomic():
                 # make sure the payment is still pending
-                payment = self.model.objects.select_for_update(
+                instalment = self.model.objects.select_for_update(
                     nowait=True
                 ).get(
                     pk=pk,
                     state__slug=CheckoutState.PENDING
                 )
                 # we are ready to request payment
-                payment.state = CheckoutState.objects.request
-                payment.save()
+                instalment.state = CheckoutState.objects.request
+                instalment.save()
+            # request payment
+            Checkout.objects.direct_debit(instalment)
 
 
 class ContactPlanPayment(TimeStampedModel):
