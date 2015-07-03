@@ -123,11 +123,8 @@ def test_due():
         due=today+relativedelta(days=2),
         amount=Decimal('2')
     )
-    result = [(p.count, p.amount) for p in ContactPlanPayment.objects.due]
-    assert [
-        (1, Decimal('1')),
-        (2, Decimal('2')),
-    ] == result
+    result = [p.amount for p in ContactPlanPayment.objects.due]
+    assert [Decimal('1'), Decimal('2')] == result
 
 
 @pytest.mark.django_db
