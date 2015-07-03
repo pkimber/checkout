@@ -426,11 +426,32 @@ class PaymentPlan(TimeStampedModel):
 reversion.register(PaymentPlan)
 
 
+class ContactPlanManager(models.Manager):
+
+    def create_contact_plan(self, contact, payment_plan, start_date, total):
+        """Create a payment plan.
+
+        This method must be called from within a transaction.
+
+        """
+        obj = self.model(contact=contact, payment_plan=payment_plan)
+        obj.save()
+        installments = payment_plan.illustration(start_date, total)
+        for due, amount in installments:
+            ContactPlanPayment.objects.create_contact_plan_payment(
+                obj,
+                due,
+                amount
+            )
+        return obj
+
+
 class ContactPlan(TimeStampedModel):
     """Payment plan for a contact."""
 
     contact = models.ForeignKey(settings.CONTACT_MODEL)
     payment_plan = models.ForeignKey(PaymentPlan)
+    objects = ContactPlanManager()
 
     class Meta:
         ordering = ('contact__user__username', 'payment_plan__slug')
@@ -440,7 +461,19 @@ class ContactPlan(TimeStampedModel):
     def __str__(self):
         return '{} {}'.format(self.contact.user.username, self.payment_plan.name)
 
+    @property
+    def payments(self):
+        return self.contactplanpayment_set.all().order_by('due')
+
 reversion.register(ContactPlan)
+
+
+class ContactPlanPaymentManager(models.Manager):
+
+    def create_contact_plan_payment(self, plan, due, amount):
+        obj = self.model(plan=plan, due=due, amount=amount)
+        obj.save()
+        return obj
 
 
 class ContactPlanPayment(TimeStampedModel):
@@ -449,8 +482,10 @@ class ContactPlanPayment(TimeStampedModel):
     plan = models.ForeignKey(ContactPlan)
     due = models.DateField()
     amount = models.DecimalField(max_digits=8, decimal_places=2)
+    objects = ContactPlanPaymentManager()
 
     class Meta:
+        unique_together = ('plan', 'due')
         verbose_name = 'Payments for a contact'
         verbose_name_plural = 'Payments for a contact'
 
