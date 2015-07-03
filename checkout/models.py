@@ -456,6 +456,7 @@ class ContactPlan(TimeStampedModel):
 
     contact = models.ForeignKey(settings.CONTACT_MODEL)
     payment_plan = models.ForeignKey(PaymentPlan)
+    deleted = models.BooleanField(default=False)
     objects = ContactPlanManager()
 
     class Meta:

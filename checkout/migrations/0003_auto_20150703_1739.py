@@ -18,6 +18,11 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(to='checkout.CheckoutState', default=checkout.models.default_checkout_state),
         ),
         migrations.AddField(
+            model_name='contactplan',
+            name='deleted',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
             model_name='contactplanpayment',
             name='state',
             field=models.ForeignKey(to='checkout.CheckoutState', default=checkout.models.default_checkout_state),
