@@ -72,6 +72,10 @@ class CheckoutStateManager(models.Manager):
         return self.model.objects.get(slug=self.model.PENDING)
 
     @property
+    def requested(self):
+        return self.model.objects.get(slug=self.model.REQUESTED)
+
+    @property
     def success(self):
         return self.model.objects.get(slug=self.model.SUCCESS)
 
@@ -80,6 +84,7 @@ class CheckoutState(TimeStampedModel):
 
     FAIL = 'fail'
     PENDING = 'pending'
+    REQUEST = 'request'
     SUCCESS = 'success'
 
     name = models.CharField(max_length=100)
@@ -480,6 +485,7 @@ class ContactPlanPayment(TimeStampedModel):
     """Payments for a contact."""
 
     plan = models.ForeignKey(ContactPlan)
+    state = models.ForeignKey(CheckoutState, default=default_checkout_state)
     due = models.DateField()
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     objects = ContactPlanPaymentManager()

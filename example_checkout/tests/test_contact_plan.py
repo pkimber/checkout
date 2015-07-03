@@ -44,6 +44,7 @@ def test_create_contact_plan():
         interval=1,
     )
     with transaction.atomic():
+        # this must be run within a transaction
         ContactPlan.objects.create_contact_plan(
             contact,
             payment_plan,

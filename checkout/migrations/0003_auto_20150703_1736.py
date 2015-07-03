@@ -17,4 +17,9 @@ class Migration(migrations.Migration):
             name='state',
             field=models.ForeignKey(to='checkout.CheckoutState', default=checkout.models.default_checkout_state),
         ),
+        migrations.AddField(
+            model_name='contactplanpayment',
+            name='state',
+            field=models.ForeignKey(to='checkout.CheckoutState', default=checkout.models.default_checkout_state),
+        ),
     ]
