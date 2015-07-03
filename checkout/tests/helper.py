@@ -24,16 +24,20 @@ def check_checkout(model_instance):
     model_instance.checkout_description
     model_instance.checkout_name
     model_instance.checkout_total
-    model_instance.checkout_fail()
-    model_instance.checkout_success()
+    # Update the object to record the payment failure.
+    # Called from within a transaction and you can update the model.
+    model_instance.checkout_fail
+    # Update the object to record the payment success.
+    # Called from within a transaction and you can update the model.
+    model_instance.checkout_success
     # model_instance.checkout_state
     # model_instance.set_checkout_state(CheckoutState.objects.success)
-    url = model_instance.checkout_fail_url
-    if not url:
-        raise CheckoutError("{}.checkout_fail_url' should return a url")
-    url = model_instance.checkout_success_url
-    if not url:
-        raise CheckoutError("{}.checkout_success_url' should return a url")
+    #url = model_instance.checkout_fail_url
+    #if not url:
+    #    raise CheckoutError("{}.checkout_fail_url' should return a url")
+    #url = model_instance.checkout_success_url
+    #if not url:
+    #    raise CheckoutError("{}.checkout_success_url' should return a url")
     # do we have mail templates for paid and pay later?
     # assert model_instance.mail_template_name
     # the generic content must implement 'get_absolute_url'

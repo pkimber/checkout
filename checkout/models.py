@@ -72,8 +72,8 @@ class CheckoutStateManager(models.Manager):
         return self.model.objects.get(slug=self.model.PENDING)
 
     @property
-    def requested(self):
-        return self.model.objects.get(slug=self.model.REQUESTED)
+    def request(self):
+        return self.model.objects.get(slug=self.model.REQUEST)
 
     @property
     def success(self):
@@ -442,9 +442,12 @@ class ContactPlanManager(models.Manager):
         obj = self.model(contact=contact, payment_plan=payment_plan)
         obj.save()
         installments = payment_plan.illustration(start_date, total)
+        count = 0
         for due, amount in installments:
+            count = count + 1
             ContactPlanPayment.objects.create_contact_plan_payment(
                 obj,
+                count,
                 due,
                 amount
             )
@@ -468,6 +471,10 @@ class ContactPlan(TimeStampedModel):
         return '{} {}'.format(self.contact.user.username, self.payment_plan.name)
 
     @property
+    def payment_count(self):
+        return self.contactplanpayment_set.count()
+
+    @property
     def payments(self):
         return self.contactplanpayment_set.all().order_by('due')
 
@@ -476,17 +483,25 @@ reversion.register(ContactPlan)
 
 class ContactPlanPaymentManager(models.Manager):
 
-    def create_contact_plan_payment(self, contact_plan, due, amount):
-        obj = self.model(contact_plan=contact_plan, due=due, amount=amount)
+    def create_contact_plan_payment(self, contact_plan, count, due, amount):
+        obj = self.model(
+            contact_plan=contact_plan,
+            count=count,
+            due=due,
+            amount=amount,
+        )
         obj.save()
         return obj
 
     @property
-    def _lock_due(self):
-        """Lock the records while we try and take the payment."""
-        return self.model.objects.select_for_update(
-            nowait=True
-        ).filter(
+    def due(self):
+        """Lock the records while we try and take the payment.
+
+        TODO Do we need to check that a payment is not already linked to this
+        record?
+
+        """
+        return self.model.objects.filter(
             due__gte=date.today(),
             state__slug=CheckoutState.PENDING,
         ).exclude(
@@ -495,16 +510,26 @@ class ContactPlanPaymentManager(models.Manager):
 
     @property
     def process_payments(self):
-        with transaction.atomic():
-            pks = [o.pk for o in self._lock_due]
-            for pk in pks:
-                print(pk)
+        pks = [o.pk for o in self.due]
+        for pk in pks:
+            with transaction.atomic():
+                # make sure the payment is still pending
+                payment = self.model.objects.select_for_update(
+                    nowait=True
+                ).get(
+                    pk=pk,
+                    state__slug=CheckoutState.PENDING
+                )
+                # we are ready to request payment
+                payment.state = CheckoutState.objects.request
+                payment.save()
 
 
 class ContactPlanPayment(TimeStampedModel):
     """Payments for a contact."""
 
     contact_plan = models.ForeignKey(ContactPlan)
+    count = models.IntegerField()
     state = models.ForeignKey(CheckoutState, default=default_checkout_state)
     due = models.DateField()
     amount = models.DecimalField(max_digits=8, decimal_places=2)
@@ -522,5 +547,53 @@ class ContactPlanPayment(TimeStampedModel):
             self.due,
             self.amount,
         )
+
+    def get_absolute_url(self):
+        """TODO Update this to display the payment plan."""
+        return reverse('project.home')
+
+    @property
+    def checkout_description(self):
+        return [
+            '{}'.format(
+                self.contact_plan.payment_plan.name,
+            ),
+            'Instalment {} of {}'.format(
+                self.count,
+                self.contact_plan.payment_count,
+            ),
+        ]
+
+    @property
+    def checkout_email(self):
+        return self.contact_plan.contact.user.email
+
+    @property
+    def checkout_fail(self):
+        """Update the object to record the payment failure.
+
+        Called from within a transaction and you can update the model.
+
+        """
+        self.state = CheckoutState.objects.fail
+        self.save()
+
+    @property
+    def checkout_name(self):
+        return self.contact_plan.contact.user.get_full_name()
+
+    @property
+    def checkout_success(self):
+        """Update the object to record the payment success.
+
+        Called from within a transaction and you can update the model.
+
+        """
+        self.state = CheckoutState.objects.success
+        self.save()
+
+    @property
+    def checkout_total(self):
+        return self.amount
 
 reversion.register(ContactPlanPayment)

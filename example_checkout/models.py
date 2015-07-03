@@ -92,7 +92,13 @@ class SalesLedger(models.Model):
     def checkout_email(self):
         return self.contact.user.email
 
+    @property
     def checkout_fail(self):
+        """Update the object to record the payment failure.
+
+        Called from within a transaction and you can update the model.
+
+        """
         pass
 
     @property
@@ -100,7 +106,13 @@ class SalesLedger(models.Model):
         """just for testing."""
         return reverse('checkout.list.audit')
 
+    @property
     def checkout_success(self):
+        """Update the object to record the payment success.
+
+        Called from within a transaction and you can update the model.
+
+        """
         pass
 
     @property

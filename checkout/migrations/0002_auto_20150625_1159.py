@@ -26,7 +26,7 @@ def default_state(apps, schema_editor):
     model = apps.get_model('checkout', 'CheckoutState')
     _init_state(model, 'Fail', 'fail')
     _init_state(model, 'Pending', 'pending')
-    _init_state(model, 'Requested', 'requested')
+    _init_state(model, 'Request', 'request')
     _init_state(model, 'Success', 'success')
 
 

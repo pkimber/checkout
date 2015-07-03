@@ -43,6 +43,10 @@ class ContactPlanPaymentFactory(factory.django.DjangoModelFactory):
     due = date.today()
     amount = Decimal('99.99')
 
+    @factory.sequence
+    def count(n):
+        return n
+
 
 class SalesLedgerFactory(factory.django.DjangoModelFactory):
 
