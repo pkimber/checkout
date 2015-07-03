@@ -42,9 +42,9 @@ def test_create_contact_plan():
             Decimal('100')
         )
     contact_plan = ContactPlan.objects.get(contact=contact)
-    result = [(p.due, p.amount) for p in contact_plan.payments]
+    result = [(p.count, p.due, p.amount) for p in contact_plan.payments]
     assert [
-        (date(2015, 7, 1), Decimal('20')),
-        (date(2015, 8, 1), Decimal('40')),
-        (date(2015, 9, 1), Decimal('40')),
+        (1, date(2015, 7, 1), Decimal('20')),
+        (2, date(2015, 8, 1), Decimal('40')),
+        (3, date(2015, 9, 1), Decimal('40')),
     ] == result
