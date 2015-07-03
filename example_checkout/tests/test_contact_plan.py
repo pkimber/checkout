@@ -16,22 +16,12 @@ from .factories import (
 
 
 @pytest.mark.django_db
-def test_factory_contact_plan():
+def test_factory():
     ContactPlanFactory()
 
 
 @pytest.mark.django_db
-def test_factory_contact_plan_payment():
-    ContactPlanPaymentFactory()
-
-
-@pytest.mark.django_db
-def test_factory_contact_plan_payment_str():
-    str(ContactPlanPaymentFactory())
-
-
-@pytest.mark.django_db
-def test_factory_contact_plan_str():
+def test_str():
     str(ContactPlanFactory())
 
 

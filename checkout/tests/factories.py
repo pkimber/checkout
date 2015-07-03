@@ -34,3 +34,11 @@ class PaymentPlanFactory(factory.django.DjangoModelFactory):
     deposit = 20
     count = 2
     interval = 1
+
+    @factory.sequence
+    def name(n):
+        return '{:02d}_name'.format(n)
+
+    @factory.sequence
+    def slug(n):
+        return '{:02d}_slug'.format(n)

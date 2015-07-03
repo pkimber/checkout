@@ -476,30 +476,39 @@ reversion.register(ContactPlan)
 
 class ContactPlanPaymentManager(models.Manager):
 
-    def create_contact_plan_payment(self, plan, due, amount):
-        obj = self.model(plan=plan, due=due, amount=amount)
+    def create_contact_plan_payment(self, contact_plan, due, amount):
+        obj = self.model(contact_plan=contact_plan, due=due, amount=amount)
         obj.save()
         return obj
+
+    @property
+    def due(self):
+        return self.model.objects.filter(
+            due__gte=date.today(),
+            state__slug=CheckoutState.PENDING,
+        ).exclude(
+            contact_plan__deleted=True,
+        )
 
 
 class ContactPlanPayment(TimeStampedModel):
     """Payments for a contact."""
 
-    plan = models.ForeignKey(ContactPlan)
+    contact_plan = models.ForeignKey(ContactPlan)
     state = models.ForeignKey(CheckoutState, default=default_checkout_state)
     due = models.DateField()
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     objects = ContactPlanPaymentManager()
 
     class Meta:
-        unique_together = ('plan', 'due')
+        unique_together = ('contact_plan', 'due')
         verbose_name = 'Payments for a contact'
         verbose_name_plural = 'Payments for a contact'
 
     def __str__(self):
         return '{} {} {} {}'.format(
-            self.plan.contact.user.username,
-            self.plan.payment_plan.name,
+            self.contact_plan.contact.user.username,
+            self.contact_plan.payment_plan.name,
             self.due,
             self.amount,
         )

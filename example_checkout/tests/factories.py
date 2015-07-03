@@ -39,7 +39,7 @@ class ContactPlanPaymentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ContactPlanPayment
 
-    plan = factory.SubFactory(ContactPlanFactory)
+    contact_plan = factory.SubFactory(ContactPlanFactory)
     due = date.today()
     amount = Decimal('99.99')
 
