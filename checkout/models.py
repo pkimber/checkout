@@ -482,13 +482,23 @@ class ContactPlanPaymentManager(models.Manager):
         return obj
 
     @property
-    def due(self):
-        return self.model.objects.filter(
+    def _lock_due(self):
+        """Lock the records while we try and take the payment."""
+        return self.model.objects.select_for_update(
+            nowait=True
+        ).filter(
             due__gte=date.today(),
             state__slug=CheckoutState.PENDING,
         ).exclude(
             contact_plan__deleted=True,
         )
+
+    @property
+    def process_payments(self):
+        with transaction.atomic():
+            pks = [o.pk for o in self._lock_due]
+            for pk in pks:
+                print(pk)
 
 
 class ContactPlanPayment(TimeStampedModel):
