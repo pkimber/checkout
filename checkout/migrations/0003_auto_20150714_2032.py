@@ -12,14 +12,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.AlterField(
             model_name='checkout',
             name='state',
-            field=models.ForeignKey(default=checkout.models.default_checkout_state, to='checkout.CheckoutState'),
+            field=models.ForeignKey(to='checkout.CheckoutState', default=checkout.models.default_checkout_state),
         ),
-        migrations.AddField(
-            model_name='contactplanpayment',
+        migrations.AlterField(
+            model_name='contactpaymentplaninstalment',
             name='state',
-            field=models.ForeignKey(default=checkout.models.default_checkout_state, to='checkout.CheckoutState'),
+            field=models.ForeignKey(to='checkout.CheckoutState', default=checkout.models.default_checkout_state),
         ),
     ]

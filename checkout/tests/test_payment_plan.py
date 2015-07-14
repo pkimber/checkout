@@ -2,6 +2,7 @@
 import pytest
 
 from datetime import date
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -36,13 +37,20 @@ def test_interval_greater_zero():
 
 
 @pytest.mark.django_db
-def test_illustration_simple():
-    plan = PaymentPlanFactory()
-    result = plan.illustration(date(2015, 7, 1), Decimal('100'))
+def test_simple():
+    plan = PaymentPlanFactory(
+        deposit=20,
+        count=2,
+        interval=1
+    )
+    total = Decimal('100')
+    # deposit
+    assert Decimal('20') == plan.deposit_amount(total)
+    # instalments
+    result = plan.instalments(total)
     assert [
-        (date(2015, 7, 1), Decimal('20')),
-        (date(2015, 8, 1), Decimal('40')),
-        (date(2015, 9, 1), Decimal('40')),
+        (date.today() + relativedelta(months=+1), Decimal('40')),
+        (date.today() + relativedelta(months=+2), Decimal('40')),
     ] == result
 
 
@@ -53,15 +61,18 @@ def test_illustration_typical():
         count=6,
         interval=1
     )
-    result = plan.illustration(date(2015, 7, 6), Decimal('600'))
+    total = Decimal('600')
+    # deposit
+    assert Decimal('90') == plan.deposit_amount(total)
+    # instalments
+    result = plan.instalments(total)
     assert [
-        (date(2015, 7, 6), Decimal('90')),
-        (date(2015, 8, 6), Decimal('85')),
-        (date(2015, 9, 6), Decimal('85')),
-        (date(2015, 10, 6), Decimal('85')),
-        (date(2015, 11, 6), Decimal('85')),
-        (date(2015, 12, 6), Decimal('85')),
-        (date(2016, 1, 6), Decimal('85')),
+        (date.today() + relativedelta(months=+1), Decimal('85')),
+        (date.today() + relativedelta(months=+2), Decimal('85')),
+        (date.today() + relativedelta(months=+3), Decimal('85')),
+        (date.today() + relativedelta(months=+4), Decimal('85')),
+        (date.today() + relativedelta(months=+5), Decimal('85')),
+        (date.today() + relativedelta(months=+6), Decimal('85')),
     ] == result
 
 
@@ -70,23 +81,26 @@ def test_illustration_awkward():
     plan = PaymentPlanFactory(
         deposit=50,
         count=3,
-        interval=1
+        interval=2
     )
-    result = plan.illustration(date(2015, 7, 1), Decimal('200'))
+    total = Decimal('200')
+    # deposit
+    assert Decimal('100') == plan.deposit_amount(total)
+    # instalments
+    result = plan.instalments(total)
     assert [
-        (date(2015, 7, 1), Decimal('100')),
-        (date(2015, 8, 1), Decimal('33.33')),
-        (date(2015, 9, 1), Decimal('33.33')),
-        (date(2015, 10, 1), Decimal('33.34')),
+        (date.today() + relativedelta(months=+2), Decimal('33.33')),
+        (date.today() + relativedelta(months=+4), Decimal('33.33')),
+        (date.today() + relativedelta(months=+6), Decimal('33.34')),
     ] == result
 
 
-@pytest.mark.django_db
-def test_example():
-    plan = PaymentPlanFactory(
-        deposit=50,
-        count=2,
-        interval=1
-    )
-    result = [item[1] for item in plan.example]
-    assert [Decimal('50'), Decimal('25'), Decimal('25')] == result
+#@pytest.mark.django_db
+#def test_example():
+#    plan = PaymentPlanFactory(
+#        deposit=50,
+#        count=2,
+#        interval=1
+#    )
+#    result = [item[1] for item in plan.example]
+#    assert [Decimal('50'), Decimal('25'), Decimal('25')] == result

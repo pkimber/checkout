@@ -2,6 +2,7 @@
 import logging
 
 from datetime import date
+from dateutil.relativedelta import relativedelta
 from dateutil.rrule import (
     MONTHLY,
     rrule,
@@ -209,6 +210,7 @@ class Customer(TimeStampedModel):
     name = models.TextField()
     email = models.EmailField(unique=True)
     customer_id = models.TextField()
+    expiry_date = models.DateField(blank=True, null=True)
     objects = CustomerManager()
 
     class Meta:
@@ -286,11 +288,24 @@ class CheckoutManager(models.Manager):
 
 
 class Checkout(TimeStampedModel):
-    """Checkout."""
+    """Checkout.
 
-    action = models.ForeignKey(CheckoutAction)
+    Create a 'Checkout' instance when you want to interact with Stripe e.g.
+    take a payment, get card details to set-up a payment plan or refresh the
+    details of an expired card.
+
+    """
+
+    action = models.ForeignKey(
+        CheckoutAction
+    )
     customer = models.ForeignKey(Customer)
-    state = models.ForeignKey(CheckoutState, default=default_checkout_state)
+    state = models.ForeignKey(
+        CheckoutState,
+        default=default_checkout_state
+        #blank=True,
+        #null=True
+    )
     description = models.TextField()
     total = models.DecimalField(
         max_digits=8, decimal_places=2, blank=True, null=True
@@ -398,8 +413,8 @@ class PaymentPlan(TimeStampedModel):
     name = models.TextField()
     slug = models.SlugField(unique=True)
     deposit = models.IntegerField(help_text='Initial deposit as a percentage')
-    count = models.IntegerField(help_text='Number of payments')
-    interval = models.IntegerField(help_text='Payment interval in months')
+    count = models.IntegerField(help_text='Number of instalments')
+    interval = models.IntegerField(help_text='Instalment interval in months')
     deleted = models.BooleanField(default=False)
     objects = PaymentPlanManager()
 
@@ -413,86 +428,120 @@ class PaymentPlan(TimeStampedModel):
 
     def clean(self):
         if not self.count:
-            raise ValidationError('Set at least one installment.')
+            raise ValidationError('Set at least one instalment.')
         if not self.deposit:
             raise ValidationError('Set an initial deposit.')
         if not self.interval:
-            raise ValidationError('Set the number of months between installments.')
+            raise ValidationError('Set the number of months between instalments.')
 
-    def illustration(self, start_date, total):
-        # list of deposit and installment dates
-        dates = [d.date() for d in rrule(
-            MONTHLY,
-            dtstart=start_date,
-            count=self.count+1
-        )]
-        # deposit
-        deposit = (
+    def deposit_amount(self, total):
+        return (
             total * (self.deposit / Decimal('100'))
         ).quantize(Decimal('.01'))
-        # installments
-        installment = (
+
+    def instalments(self, total):
+        # deposit
+        deposit = self.deposit_amount(total)
+        # list of dates
+        start_date = date.today() + relativedelta(months=+self.interval)
+        instalment_dates = [d.date() for d in rrule(
+            MONTHLY,
+            count=self.count,
+            dtstart=start_date,
+            interval=self.interval,
+        )]
+        # instalments
+        instalment = (
             (total - deposit) / self.count
         ).quantize(Decimal('.01'))
         # list of payment amounts
         values = []
-        check = Decimal()
-        for idx, d in enumerate(dates):
-            if idx == 0:
-                value = deposit
-            else:
-                value = installment
+        check = deposit
+        for d in instalment_dates:
+            value = instalment
             values.append(value)
             check = check + value
         # make the total match
         values[-1] = values[-1] + (total - check)
-        return list(zip(dates, values))
+        return list(zip(instalment_dates, values))
 
-    @property
-    def example(self):
-        return self.illustration(date.today(), Decimal('100'))
+    #@property
+    #def example(self):
+    #    return self.illustration(date.today(), Decimal('100'))
 
 reversion.register(PaymentPlan)
 
 
-class ContactPlanManager(models.Manager):
+class ContactPaymentPlanManager(models.Manager):
 
-    def create_contact_plan(self, contact, payment_plan, start_date, total):
+    def create_contact_payment_plan(
+            self, contact, content_object, payment_plan, total):
         """Create a payment plan.
 
         This method must be called from within a transaction.
 
         """
-        obj = self.model(contact=contact, payment_plan=payment_plan)
+        obj = self.model(
+            contact=contact,
+            content_object=content_object,
+            payment_plan=payment_plan,
+            total=total,
+        )
         obj.save()
-        installments = payment_plan.illustration(start_date, total)
-        count = 0
-        for due, amount in installments:
-            count = count + 1
-            ContactPlanPayment.objects.create_contact_plan_payment(
-                obj,
-                count,
-                due,
-                amount
-            )
+        ContactPaymentPlanInstalment.objects.create_contact_payment_plan_instalment(
+            obj,
+            1,
+            payment_plan.deposit_amount(total),
+            None
+        )
+
+        #instalments = payment_plan.illustration(start_date, total)
+        #count = 0
+        #for due, amount in instalments:
+        #    count = count + 1
+        #    ContactPlanPayment.objects.create_contact_plan_payment(
+        #        obj,
+        #        count,
+        #        due,
+        #        amount
+        #    )
         return obj
 
 
-class ContactPlan(TimeStampedModel):
+class ContactPaymentPlan(TimeStampedModel):
     """Payment plan for a contact."""
 
     contact = models.ForeignKey(settings.CONTACT_MODEL)
     payment_plan = models.ForeignKey(PaymentPlan)
+    total = models.DecimalField(max_digits=8, decimal_places=2)
+    # link to the object in the system which requested the payment plan
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    content_object = generic.GenericForeignKey()
+    # is this object deleted?
     deleted = models.BooleanField(default=False)
-    objects = ContactPlanManager()
+    objects = ContactPaymentPlanManager()
 
     class Meta:
         ordering = ('contact__user__username', 'payment_plan__slug')
+        unique_together = ('object_id', 'content_type')
         verbose_name = 'Contact payment plan'
         verbose_name_plural = 'Contact payment plans'
 
     def __str__(self):
         return '{} {}'.format(self.contact.user.username, self.payment_plan.name)
+
+    def create_instalments(self):
+        instalments = self.payment_plan.instalments(self.total)
+        count = 1
+        for due, amount in instalments:
+            count = count + 1
+            ContactPaymentPlanInstalment.objects.create_contact_payment_plan_instalment(
+                self,
+                count,
+                amount,
+                due,
+            )
 
     @property
     def payment_count(self):
@@ -500,19 +549,20 @@ class ContactPlan(TimeStampedModel):
 
     @property
     def payments(self):
-        return self.contactplanpayment_set.all().order_by('due')
+        return self.contactpaymentplaninstalment_set.all().order_by('due')
 
-reversion.register(ContactPlan)
+reversion.register(ContactPaymentPlan)
 
 
-class ContactPlanPaymentManager(models.Manager):
+class ContactPaymentPlanInstalmentManager(models.Manager):
 
-    def create_contact_plan_payment(self, contact_plan, count, due, amount):
+    def create_contact_payment_plan_instalment(
+            self, contact_payment_plan, count, amount, due):
         obj = self.model(
-            contact_plan=contact_plan,
+            contact_payment_plan=contact_payment_plan,
             count=count,
-            due=due,
             amount=amount,
+            due=due,
         )
         obj.save()
         return obj
@@ -561,18 +611,36 @@ class ContactPlanPaymentManager(models.Manager):
             Checkout.objects.direct_debit(instalment)
 
 
-class ContactPlanPayment(TimeStampedModel):
-    """Payments for a contact."""
+class ContactPaymentPlanInstalment(TimeStampedModel):
+    """Payments due for a contact.
 
-    contact_plan = models.ForeignKey(ContactPlan)
+    The deposit record gets created first.  It has:
+
+    - ``count`` of ``1``
+    - ``due`` date of ``null``
+
+    The instalment records are created after the deposit has been collected.
+    Instalment records have a ``due`` date and a ``count`` greater than ``1``.
+
+    """
+
+    contact_payment_plan = models.ForeignKey(ContactPaymentPlan)
     count = models.IntegerField()
-    state = models.ForeignKey(CheckoutState, default=default_checkout_state)
-    due = models.DateField()
+    state = models.ForeignKey(
+        CheckoutState,
+        default=default_checkout_state,
+        #blank=True,
+        #null=True
+    )
     amount = models.DecimalField(max_digits=8, decimal_places=2)
-    objects = ContactPlanPaymentManager()
+    due = models.DateField(blank=True, null=True)
+    objects = ContactPaymentPlanInstalmentManager()
 
     class Meta:
-        unique_together = ('contact_plan', 'due')
+        unique_together = (
+            ('contact_payment_plan', 'due'),
+            ('contact_payment_plan', 'count'),
+        )
         verbose_name = 'Payments for a contact'
         verbose_name_plural = 'Payments for a contact'
 
@@ -632,4 +700,4 @@ class ContactPlanPayment(TimeStampedModel):
     def checkout_total(self):
         return self.amount
 
-reversion.register(ContactPlanPayment)
+reversion.register(ContactPaymentPlanInstalment)
