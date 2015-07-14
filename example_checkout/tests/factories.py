@@ -9,20 +9,10 @@ from checkout.models import (
     ContactPlanPayment,
 )
 from checkout.tests.factories import PaymentPlanFactory
-from example_checkout.models import (
-    Contact,
-    SalesLedger,
-)
+from contact.tests.factories import ContactFactory
+from example_checkout.models import SalesLedger
 from login.tests.factories import UserFactory
 from stock.tests.factories import ProductFactory
-
-
-class ContactFactory(factory.django.DjangoModelFactory):
-
-    user = factory.SubFactory(UserFactory)
-
-    class Meta:
-        model = Contact
 
 
 class ContactPlanFactory(factory.django.DjangoModelFactory):

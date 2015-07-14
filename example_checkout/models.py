@@ -6,40 +6,6 @@ from django.db import models
 from stock.models import Product
 
 
-class ContactManager(models.Manager):
-
-    def create_contact(self, user):
-        obj = self.model(
-            user=user,
-        )
-        obj.save()
-        return obj
-
-
-class Contact(models.Model):
-    """Contact."""
-
-    user = models.OneToOneField(settings.AUTH_USER_MODEL)
-    address_1 = models.CharField('Address', max_length=100, blank=True)
-    address_2 = models.CharField('', max_length=100, blank=True)
-    address_3 = models.CharField('', max_length=100, blank=True)
-    town = models.CharField(max_length=100, blank=True)
-    county = models.CharField(max_length=100, blank=True)
-    postcode = models.CharField(max_length=20, blank=True)
-    objects = ContactManager()
-
-    class Meta:
-        ordering = ('user__last_name', 'user__first_name')
-        verbose_name = 'Contact'
-        verbose_name_plural = 'Contacts'
-
-    def __str__(self):
-        return '{} {}'.format(
-            self.user.first_name,
-            self.user.last_name,
-        )
-
-
 class SalesLedgerManager(models.Manager):
 
     def create_sales_ledger(self, contact, product, quantity):
@@ -55,7 +21,7 @@ class SalesLedgerManager(models.Manager):
 class SalesLedger(models.Model):
     """List of prices."""
 
-    contact = models.ForeignKey(Contact)
+    contact = models.ForeignKey(settings.CONTACT_MODEL)
     product = models.ForeignKey(Product)
     quantity = models.IntegerField()
     objects = SalesLedgerManager()

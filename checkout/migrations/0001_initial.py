@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.conf import settings
 from django.db import models, migrations
 
 
@@ -8,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
-        ('example_checkout', '__first__'),
+        migrations.swappable_dependency(settings.CONTACT_MODEL),
     ]
 
     operations = [
@@ -65,7 +66,7 @@ class Migration(migrations.Migration):
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('deleted', models.BooleanField(default=False)),
-                ('contact', models.ForeignKey(to='example_checkout.Contact')),
+                ('contact', models.ForeignKey(to=settings.CONTACT_MODEL)),
             ],
             options={
                 'verbose_name_plural': 'Contact payment plans',
@@ -82,7 +83,7 @@ class Migration(migrations.Migration):
                 ('count', models.IntegerField()),
                 ('due', models.DateField()),
                 ('amount', models.DecimalField(max_digits=8, decimal_places=2)),
-                ('contact_plan', models.ForeignKey(to='checkout.ContactPlan')),
+                ('contact_plan', models.ForeignKey(to=settings.CONTACT_MODEL)),
             ],
             options={
                 'verbose_name_plural': 'Payments for a contact',

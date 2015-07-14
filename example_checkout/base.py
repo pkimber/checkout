@@ -148,6 +148,7 @@ THIRD_PARTY_APPS = (
 LOCAL_APPS = (
     'base',
     'checkout',
+    'contact',
     'example_checkout',
     'finance',
     'login',
@@ -212,7 +213,7 @@ CELERY_DISABLE_RATE_LIMITS = True
 # django-compressor
 COMPRESS_ENABLED = False # defaults to the opposite of DEBUG
 
-CONTACT_MODEL = 'example_checkout.Contact'
+CONTACT_MODEL = 'contact.Contact'
 
 FTP_STATIC_DIR = None
 FTP_STATIC_URL = None

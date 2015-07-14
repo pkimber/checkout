@@ -8,10 +8,8 @@ from checkout.models import (
     ContactPlan,
     PaymentPlan,
 )
-from example_checkout.models import (
-    Contact,
-    SalesLedger,
-)
+from contact.models import Contact
+from example_checkout.models import SalesLedger
 from finance.models import VatSettings
 from login.tests.scenario import get_user_web
 from mail.models import Notify
