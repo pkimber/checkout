@@ -476,7 +476,7 @@ class ContactPaymentPlanManager(models.Manager):
 
     def create_contact_payment_plan(
             self, contact, content_object, payment_plan, total):
-        """Create a payment plan.
+        """Create a payment plan for the contact with the deposit record.
 
         This method must be called from within a transaction.
 
@@ -490,21 +490,10 @@ class ContactPaymentPlanManager(models.Manager):
         obj.save()
         ContactPaymentPlanInstalment.objects.create_contact_payment_plan_instalment(
             obj,
-            1,
+            ContactPaymentPlanInstalment.DEPOSIT,
             payment_plan.deposit_amount(total),
             None
         )
-
-        #instalments = payment_plan.illustration(start_date, total)
-        #count = 0
-        #for due, amount in instalments:
-        #    count = count + 1
-        #    ContactPlanPayment.objects.create_contact_plan_payment(
-        #        obj,
-        #        count,
-        #        due,
-        #        amount
-        #    )
         return obj
 
 
@@ -531,7 +520,35 @@ class ContactPaymentPlan(TimeStampedModel):
     def __str__(self):
         return '{} {}'.format(self.contact.user.username, self.payment_plan.name)
 
+    @property
+    def _check_create_instalments(self):
+        """Check the current records to make sure we can create instalments."""
+        instalments = ContactPaymentPlanInstalment.objects.filter(
+            contact_payment_plan=self
+        )
+        count = instalments.count()
+        if not count:
+            # a contact payment plan should always have a deposit record
+            raise CheckoutError(
+                "no deposit/instalment record set-up for "
+                "payment plan: '{}'".format(self.pk)
+            )
+        if count == 1:
+            # the deposit record should have a 'count' of 1 (DEPOSIT)
+            if not instalments.first().count == ContactPaymentPlanInstalment.DEPOSIT:
+                raise CheckoutError(
+                    "no deposit record for "
+                    "payment plan: '{}'".format(self.pk)
+                )
+        else:
+            # cannot create instalments if already created!
+            raise CheckoutError(
+                "instalments already created for this "
+                "payment plan: '{}'".format(self.pk)
+            )
+
     def create_instalments(self):
+        self._check_create_instalments
         instalments = self.payment_plan.instalments(self.total)
         count = 1
         for due, amount in instalments:
@@ -623,6 +640,9 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
     Instalment records have a ``due`` date and a ``count`` greater than ``1``.
 
     """
+
+    # the 'count' should be set to 1 for the deposit
+    DEPOSIT = 1
 
     contact_payment_plan = models.ForeignKey(ContactPaymentPlan)
     count = models.IntegerField()
