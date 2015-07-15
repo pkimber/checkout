@@ -545,7 +545,7 @@ class ContactPaymentPlan(TimeStampedModel):
 
     @property
     def payment_count(self):
-        return self.contactplanpayment_set.count()
+        return self.contactpaymentplaninstalment_set.count()
 
     @property
     def payments(self):
@@ -579,7 +579,7 @@ class ContactPaymentPlanInstalmentManager(models.Manager):
             due__gte=date.today(),
             state__slug=CheckoutState.PENDING,
         ).exclude(
-            contact_plan__deleted=True,
+            contact_payment_plan__deleted=True,
         )
 
     @property
@@ -660,17 +660,17 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
     def checkout_description(self):
         return [
             '{}'.format(
-                self.contact_plan.payment_plan.name,
+                self.contact_payment_plan.payment_plan.name,
             ),
             'Instalment {} of {}'.format(
                 self.count,
-                self.contact_plan.payment_count,
+                self.contact_payment_plan.payment_count,
             ),
         ]
 
     @property
     def checkout_email(self):
-        return self.contact_plan.contact.user.email
+        return self.contact_payment_plan.contact.user.email
 
     @property
     def checkout_fail(self):
@@ -684,7 +684,7 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
 
     @property
     def checkout_name(self):
-        return self.contact_plan.contact.user.get_full_name()
+        return self.contact_payment_plan.contact.user.get_full_name()
 
     @property
     def checkout_success(self):
