@@ -271,6 +271,6 @@ def test_process_payments():
     # ContactPlanPayment.objects.process_payments
 
 
-#@pytest.mark.django_db
-#def test_str():
-#    str(ContactPlanPaymentFactory())
+@pytest.mark.django_db
+def test_str():
+    str(ContactPaymentPlanFactory())
