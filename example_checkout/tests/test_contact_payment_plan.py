@@ -11,19 +11,18 @@ from checkout.models import ContactPaymentPlan
 from checkout.tests.factories import PaymentPlanFactory
 from .factories import (
     ContactFactory,
-    #ContactPlanFactory,
-    #ContactPlanPaymentFactory,
+    ContactPaymentPlanFactory,
 )
 
 
-#@pytest.mark.django_db
-#def test_factory():
-#    ContactPlanFactory()
-#
-#
-#@pytest.mark.django_db
-#def test_str():
-#    str(ContactPlanFactory())
+@pytest.mark.django_db
+def test_factory():
+    ContactPaymentPlanFactory()
+
+
+@pytest.mark.django_db
+def test_str():
+    str(ContactPaymentPlanFactory())
 
 
 @pytest.mark.django_db
