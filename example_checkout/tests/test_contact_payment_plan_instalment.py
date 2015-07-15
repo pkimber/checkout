@@ -20,8 +20,6 @@ from .factories import (
     ContactPaymentPlanFactory,
     ContactPaymentPlanInstalmentFactory,
 )
-#ContactPlanFactory,
-#ContactPlanPaymentFactory,
 
 
 @pytest.mark.django_db
@@ -87,12 +85,6 @@ def test_checkout_fail():
 
 @pytest.mark.django_db
 def test_checkout_name():
-    #payment_plan = PaymentPlanFactory(
-    #    name='pkimber',
-    #    deposit=50,
-    #    count=2,
-    #    interval=1
-    #)
     user = UserFactory(first_name='Patrick', last_name='Kimber')
     contact_pp = ContactPaymentPlan.objects.create_contact_payment_plan(
         ContactFactory(user=user),
@@ -108,7 +100,6 @@ def test_checkout_name():
 
 @pytest.mark.django_db
 def test_checkout_success():
-    #obj = ContactPlanPaymentFactory()
     contact_pp = ContactPaymentPlan.objects.create_contact_payment_plan(
         ContactFactory(),
         ContactFactory(),
@@ -162,9 +153,6 @@ def test_checkout_email():
     obj = ContactPaymentPlanInstalment.objects.get(
         contact_payment_plan=contact_pp
     )
-    #contact = ContactFactory(user=user)
-    #contact_plan = ContactPlanFactory(contact=contact)
-    #obj = ContactPlanPaymentFactory(contact_plan=contact_plan)
     assert 'me@test.com' == obj.checkout_email
 
 
