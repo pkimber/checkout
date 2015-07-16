@@ -95,12 +95,12 @@ def test_illustration_awkward():
     ] == result
 
 
-#@pytest.mark.django_db
-#def test_example():
-#    plan = PaymentPlanFactory(
-#        deposit=50,
-#        count=2,
-#        interval=1
-#    )
-#    result = [item[1] for item in plan.example]
-#    assert [Decimal('50'), Decimal('25'), Decimal('25')] == result
+@pytest.mark.django_db
+def test_example():
+    plan = PaymentPlanFactory(
+        deposit=50,
+        count=2,
+        interval=1
+    )
+    result = [item[1] for item in plan.example(Decimal('100'))]
+    assert [Decimal('50'), Decimal('25'), Decimal('25')] == result

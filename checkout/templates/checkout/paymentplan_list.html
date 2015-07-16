@@ -1,5 +1,6 @@
 {% extends 'checkout/base.html' %}
 {% load static %}
+{% load checkout_tags %}
 
 {% block title %}
   Payment Plan Setup
@@ -51,18 +52,7 @@
                 </td>
                 <td>
                   <small>
-                    e.g. for &pound;<strong>100</strong>
-                    <br />
-                    {% for item in payment_plan.sample %}
-                      {% if forloop.first %}
-                        &pound;{{ item.1 }}&nbsp;deposit
-                      {% elif forloop.last %}
-                        &pound;{{ item.1 }}&nbsp;final
-                      {% else %}
-                        &pound;{{ item.1 }}
-                      {% endif %}
-                      <br />
-                    {% endfor %}
+                    {% checkout_payment_plan_example payment_plan 100 %}
                   </small>
                 </td>
               </tr>

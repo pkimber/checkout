@@ -1,0 +1,13 @@
+e.g. for &pound;<strong>{{ total }}</strong>
+<br />
+{% for item in example %}
+  {{ item.0|date:'d/m/Y' }}
+  {% if forloop.first %}
+    &pound;{{ item.1 }}&nbsp;deposit
+  {% elif forloop.last %}
+    &pound;{{ item.1 }}&nbsp;final
+  {% else %}
+    &pound;{{ item.1 }}
+  {% endif %}
+  <br />
+{% endfor %}

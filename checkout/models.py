@@ -465,9 +465,11 @@ class PaymentPlan(TimeStampedModel):
         values[-1] = values[-1] + (total - check)
         return list(zip(instalment_dates, values))
 
-    #@property
-    #def example(self):
-    #    return self.illustration(date.today(), Decimal('100'))
+    def example(self, total):
+        result = [
+            (date.today(), self.deposit_amount(total)),
+        ]
+        return result + self.instalments(total)
 
 reversion.register(PaymentPlan)
 

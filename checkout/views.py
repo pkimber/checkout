@@ -127,6 +127,15 @@ class CheckoutMixin(object):
         return context
 
     def form_valid(self, form):
+        """
+
+        TODO PJK This view is trying to update the model in the standard form
+        update view way (``form.save()``) and is also trying to process the
+        payment on the model.  I think it would be better if we didn't do the
+        standard form save, but just processed the payment.  This would be
+        similar to the way we use the ``UpdateView`` for deleting models.
+
+        """
         self.object = form.save(commit=False)
         checkout = None
         token = form.cleaned_data['token']
