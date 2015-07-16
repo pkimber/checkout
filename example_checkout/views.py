@@ -35,7 +35,7 @@ class SalesLedgerCheckoutDirectDebitUpdateView(
     template_name = 'example/direct_debit.html'
 
     def form_valid(self, form):
-        Checkout.objects.direct_debit(self.object)
+        Checkout.objects.direct_debit(self.request.user, self.object)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
@@ -48,11 +48,3 @@ class SalesLedgerCheckoutUpdateView(
     model = SalesLedger
     form_class = SalesLedgerCheckoutForm
     template_name = 'example/checkout.html'
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs.update(dict(
-            actions=[CheckoutAction.PAYMENT, CheckoutAction.PAYMENT_PLAN],
-            #actions=[CheckoutAction.PAYMENT_PLAN],
-        ))
-        return kwargs

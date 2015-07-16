@@ -13,6 +13,15 @@ def _init_state(model, name, slug):
         instance.full_clean()
 
 
+def _init_state_action(model, name, slug, payment):
+    try:
+        obj = model.objects.get(slug=slug)
+    except model.DoesNotExist:
+        instance = model(**dict(name=name, slug=slug, payment=payment))
+        instance.save()
+        instance.full_clean()
+
+
 def default_state(apps, schema_editor):
     """Create default states.
 
@@ -21,8 +30,10 @@ def default_state(apps, schema_editor):
 
     """
     model = apps.get_model('checkout', 'CheckoutAction')
-    _init_state(model, 'Payment', 'payment')
-    _init_state(model, 'Payment Plan', 'payment_plan')
+    _init_state_action(model, 'Payment', 'payment', True)
+    _init_state_action(model, 'Setup Payment Plan', 'payment_plan', False)
+    _init_state_action(model, 'Update Card', 'card_update', False)
+
     model = apps.get_model('checkout', 'CheckoutState')
     _init_state(model, 'Fail', 'fail')
     _init_state(model, 'Pending', 'pending')

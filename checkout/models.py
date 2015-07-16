@@ -103,25 +103,16 @@ class CheckoutState(TimeStampedModel):
 reversion.register(CheckoutState)
 
 
-class CheckoutActionManager(models.Manager):
-
-    @property
-    def payment(self):
-        return self.model.objects.get(slug=self.model.PAYMENT)
-
-    @property
-    def payment_plan(self):
-        return self.model.objects.get(slug=self.model.PAYMENT_PLAN)
-
-
 class CheckoutAction(TimeStampedModel):
 
+    CARD_UPDATE = 'card_update'
+    DIRECT_DEBIT = 'direct_debit'
     PAYMENT = 'payment'
     PAYMENT_PLAN = 'payment_plan'
 
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
-    objects = CheckoutActionManager()
+    payment = models.BooleanField()
 
     class Meta:
         ordering = ('name',)
@@ -229,18 +220,19 @@ class CheckoutManager(models.Manager):
     def audit(self):
         return self.model.objects.all().order_by('-pk')
 
-    def create_checkout(self, action, customer, content_object):
+    def create_checkout(self, action, customer, user, content_object):
         """Create a checkout payment request."""
         obj = self.model(
             action=action,
             content_object=content_object,
             customer=customer,
+            user=user,
             description=', '.join(content_object.checkout_description),
         )
         obj.save()
         return obj
 
-    def direct_debit(self, content_object):
+    def direct_debit(self, user, content_object):
         """Collect some money from a customer.
 
         We should only attempt to collect money if the customer has already
@@ -255,9 +247,11 @@ class CheckoutManager(models.Manager):
             raise CheckoutError(
                 'Customer has not registered a card'
             ) from e
+        action = CheckoutAction.objects.get(slug=CheckoutAction.DIRECT_DEBIT)
         checkout = self.create_checkout(
-            CheckoutAction.objects.payment,
+            action,
             customer,
+            user,
             content_object
         )
         try:
@@ -285,6 +279,7 @@ class Checkout(TimeStampedModel):
         CheckoutAction
     )
     customer = models.ForeignKey(Customer)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
     state = models.ForeignKey(
         CheckoutState,
         default=default_checkout_state
@@ -392,15 +387,10 @@ class Checkout(TimeStampedModel):
             )
 
     def process(self):
-        if self.payment:
+        if self.action.payment:
             self.total = self.content_object.checkout_total
             self.save()
             self._charge()
-
-    @property
-    def payment(self):
-        """Is this a payment action."""
-        return self.action == CheckoutAction.objects.payment
 
     def success(self):
         """Checkout successful - so update and notify admin."""

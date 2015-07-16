@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+import json
 import logging
 import stripe
 
@@ -30,6 +31,7 @@ from .models import (
     as_pennies,
     Checkout,
     CheckoutAction,
+    CheckoutError,
     ContactPaymentPlan,
     CURRENCY,
     Customer,
@@ -89,8 +91,21 @@ class CheckoutListView(
 
 class CheckoutMixin(object):
 
-    def _checkout_fail(self):
-            return self.object.checkout_fail()
+    def _action_data(self):
+        """the action data for the javascript on the page."""
+        actions = self.object.checkout_actions
+        result = {}
+        for slug in actions:
+            obj = CheckoutAction.objects.get(slug=slug)
+            result[slug] = dict(
+                name=obj.name,
+                payment=obj.payment,
+            )
+        return json.dumps(result)
+
+    #def _checkout_fail(self):
+    #    I don't know if we need this method
+    #    return self.object.checkout_fail()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -98,6 +113,7 @@ class CheckoutMixin(object):
         # _check_perm(self.request, self.object)
         # self.object.check_can_pay
         context.update(dict(
+            action_data=self._action_data(),
             currency=CURRENCY,
             description=self.object.checkout_description,
             email=self.object.checkout_email,
@@ -106,6 +122,15 @@ class CheckoutMixin(object):
             total=as_pennies(self.object.checkout_total), # pennies
         ))
         return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update(dict(
+            #actions=[CheckoutAction.PAYMENT, CheckoutAction.PAYMENT_PLAN],
+            #actions=[CheckoutAction.PAYMENT_PLAN],
+            actions=self.object.checkout_actions,
+        ))
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -124,7 +149,7 @@ class CheckoutMixin(object):
         action = CheckoutAction.objects.get(slug=slug)
         customer = Customer.objects.init_customer(self.object, token)
         checkout = Checkout.objects.create_checkout(
-            action, customer, self.object
+            action, customer, self.request.user, self.object
         )
         try:
             checkout.process()

@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db import models
 
+from checkout.models import CheckoutAction
 from stock.models import Product
 
 
@@ -39,6 +40,14 @@ class SalesLedger(models.Model):
         return reverse('project.home')
 
     @property
+    def checkout_actions(self):
+        return [
+            CheckoutAction.CARD_UPDATE,
+            CheckoutAction.PAYMENT,
+            CheckoutAction.PAYMENT_PLAN,
+        ]
+
+    @property
     def checkout_name(self):
         return '{} {}'.format(
             self.contact.user.first_name,
@@ -61,7 +70,7 @@ class SalesLedger(models.Model):
     def checkout_fail(self):
         """Update the object to record the payment failure.
 
-        Called from within a transaction and you can update the model.
+        Called from within a transaction so you can update the model.
 
         """
         pass
@@ -74,7 +83,7 @@ class SalesLedger(models.Model):
     def checkout_success(self):
         """Update the object to record the payment success.
 
-        Called from within a transaction and you can update the model.
+        Called from within a transaction so you can update the model.
 
         """
         pass

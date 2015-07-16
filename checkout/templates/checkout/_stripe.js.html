@@ -23,16 +23,16 @@
         if (!action) {
             action = $('#id_checkout_form #id_action').val();
         }
-        options = {};
-        if (action == 'payment') {
-            options = {
-                amount: {{ total }},
-                currency: "{{ currency }}"
-            };
-        } else if (action == 'payment_plan') {
-            options = {
-                panelLabel: "Setup Payment Plan"
-            };
+        var action_data = {{ action_data|safe }};
+        var data = action_data[action];
+        var caption = data['name'];
+        var is_payment = data['payment'];
+        options = {
+            panelLabel: caption
+        };
+        if (is_payment) {
+            options.amount = {{ total }};
+            currency = "{{ currency }}";
         }
         if (action) {
             // Open Checkout with further options
