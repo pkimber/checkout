@@ -226,19 +226,19 @@ reversion.register(Customer)
 
 class CheckoutManager(models.Manager):
 
-    def _create_checkout(self, action, customer, description, content_object):
+    def audit(self):
+        return self.model.objects.all().order_by('-pk')
+
+    def create_checkout(self, action, customer, content_object):
         """Create a checkout payment request."""
         obj = self.model(
             action=action,
             content_object=content_object,
             customer=customer,
-            description=description,
+            description=', '.join(content_object.checkout_description),
         )
         obj.save()
         return obj
-
-    def audit(self):
-        return self.model.objects.all().order_by('-pk')
 
     def direct_debit(self, content_object):
         """Collect some money from a customer.
@@ -255,33 +255,18 @@ class CheckoutManager(models.Manager):
             raise CheckoutError(
                 'Customer has not registered a card'
             ) from e
-        checkout = self.pay(
+        checkout = self.create_checkout(
             CheckoutAction.objects.payment,
             customer,
             content_object
         )
-        with transaction.atomic():
-            checkout.success()
-
-    def pay(self, action, customer, content_object):
-        obj = self._create_checkout(
-            action,
-            customer,
-            ', '.join(content_object.checkout_description),
-            content_object,
-        )
-        if obj.payment:
-            obj.total = content_object.checkout_total
-            obj.save()
-            # Create the charge on stripe's servers
-            stripe.api_key = settings.STRIPE_SECRET_KEY
-            stripe.Charge.create(
-                amount=as_pennies(content_object.checkout_total),
-                currency=CURRENCY,
-                customer=customer.customer_id,
-                description=obj.description,
-            )
-        return obj
+        try:
+            checkout.process()
+            with transaction.atomic():
+                checkout.success()
+        except CheckoutError:
+            with transaction.atomic():
+                checkout.fail()
 
     def success(self):
         return self.audit().filter(state=CheckoutState.objects.success)
@@ -324,6 +309,37 @@ class Checkout(TimeStampedModel):
     def __str__(self):
         return '{}'.format(self.customer.email)
 
+    def _charge(self):
+        """Create the charge on stripe's servers."""
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        try:
+            stripe.Charge.create(
+                amount=as_pennies(self.total),
+                currency=CURRENCY,
+                customer=self.customer.customer_id,
+                description=self.description,
+            )
+        except stripe.CardError as e:
+            logger.error(
+                'CardError\n'
+                'checkout: {}\n'
+                'param: {}\n'
+                'code: {}\n'
+                'http body: {}\n'
+                'http status: {}'.format(
+                    self.pk,
+                    e.param,
+                    e.code,
+                    e.http_body,
+                    e.http_status,
+                )
+            )
+            raise CheckoutError(
+                "Card error '{}' when charging card.  Checkout: '{}'".format(
+                    e.code, self.pk,
+                )
+            ) from e
+
     def _success_or_fail(self, state):
         self.state = state
         self.save()
@@ -335,11 +351,10 @@ class Checkout(TimeStampedModel):
         except AttributeError:
             return None
 
-    @property
     def fail(self):
         """Checkout failed - so update and notify admin."""
         self._success_or_fail(CheckoutState.objects.fail)
-        return self.object.checkout_fail()
+        return self.content_object.checkout_fail()
 
     @property
     def failed(self):
@@ -376,6 +391,12 @@ class Checkout(TimeStampedModel):
                 "No email addresses set-up in 'enquiry.models.Notify'"
             )
 
+    def process(self):
+        if self.payment:
+            self.total = self.content_object.checkout_total
+            self.save()
+            self._charge()
+
     @property
     def payment(self):
         """Is this a payment action."""
@@ -384,7 +405,7 @@ class Checkout(TimeStampedModel):
     def success(self):
         """Checkout successful - so update and notify admin."""
         self._success_or_fail(CheckoutState.objects.success)
-        return self.content_object.checkout_success()
+        return self.content_object.checkout_success
 
 reversion.register(Checkout)
 

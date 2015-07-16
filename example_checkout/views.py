@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
 from django.views.generic import (
     ListView,
     UpdateView,
@@ -35,7 +36,7 @@ class SalesLedgerCheckoutDirectDebitUpdateView(
 
     def form_valid(self, form):
         Checkout.objects.direct_debit(self.object)
-        return super().form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse('checkout.list.audit')

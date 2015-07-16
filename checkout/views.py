@@ -57,25 +57,6 @@ def _check_perm(request, payment):
         raise PermissionDenied('Valid payment check failed.')
 
 
-def _log_card_error(e, checkout_pk, content_object_pk):
-    logger.error(
-        'CardError\n'
-        'checkout: {}\n'
-        'content_object: {}\n'
-        'param: {}\n'
-        'code: {}\n'
-        'http body: {}\n'
-        'http status: {}'.format(
-            checkout_pk,
-            content_object_pk,
-            e.param,
-            e.code,
-            e.http_body,
-            e.http_status,
-        )
-    )
-
-
 class CheckoutAuditListView(
         LoginRequiredMixin, StaffuserRequiredMixin,
         BaseMixin, ListView):
@@ -141,21 +122,22 @@ class CheckoutMixin(object):
         token = form.cleaned_data['token']
         slug = form.cleaned_data['action']
         action = CheckoutAction.objects.get(slug=slug)
+        customer = Customer.objects.init_customer(self.object, token)
+        checkout = Checkout.objects.create_checkout(
+            action, customer, self.object
+        )
         try:
-            customer = Customer.objects.init_customer(self.object, token)
-            checkout = Checkout.objects.pay(action, customer, self.object)
+            checkout.process()
             with transaction.atomic():
-                self.object = form.save()
+                #self.object = form.save()
                 checkout.success()
                 checkout.notify(self.request)
             url = self.object.checkout_success_url
             process_mail.delay()
-        except stripe.CardError as e:
-            # TODO Move the exception handling into the model and just throw (and catch) a new 'CheckoutFail' exception.
-            _log_card_error(e, checkout.pk if checkout else None, self.object.pk)
+        except CheckoutError:
             with transaction.atomic():
                 checkout.fail()
-            url = self.object.fail_url
+            url = self.object.checkout_fail_url
         except stripe.StripeError as e:
             # TODO Move the exception handling into the model and just throw (and catch) a new 'CheckoutFail' exception.
             log_stripe_error(logger, e, 'checkout: {} content_object: {}'.format(
@@ -164,7 +146,7 @@ class CheckoutMixin(object):
             ))
             with transaction.atomic():
                 checkout.fail()
-            url = self.object.fail_url
+            url = self.object.checkout_fail_url
         return HttpResponseRedirect(url)
 
 
