@@ -513,7 +513,8 @@ class ContactPaymentPlanManager(models.Manager):
         obj.save()
         ContactPaymentPlanInstalment.objects.create_contact_payment_plan_instalment(
             obj,
-            ContactPaymentPlanInstalment.DEPOSIT,
+            1,
+            True,
             payment_plan.deposit_amount(total),
             None
         )
@@ -557,8 +558,8 @@ class ContactPaymentPlan(TimeStampedModel):
                 "payment plan: '{}'".format(self.pk)
             )
         if count == 1:
-            # the deposit record should have a 'count' of 1 (DEPOSIT)
-            if not instalments.first().count == ContactPaymentPlanInstalment.DEPOSIT:
+            # check the first payment is the deposit
+            if not instalments.first().deposit:
                 raise CheckoutError(
                     "no deposit record for "
                     "payment plan: '{}'".format(self.pk)
@@ -579,6 +580,7 @@ class ContactPaymentPlan(TimeStampedModel):
             ContactPaymentPlanInstalment.objects.create_contact_payment_plan_instalment(
                 self,
                 count,
+                False,
                 amount,
                 due,
             )
@@ -597,10 +599,11 @@ reversion.register(ContactPaymentPlan)
 class ContactPaymentPlanInstalmentManager(models.Manager):
 
     def create_contact_payment_plan_instalment(
-            self, contact_payment_plan, count, amount, due):
+            self, contact_payment_plan, count, deposit, amount, due):
         obj = self.model(
             contact_payment_plan=contact_payment_plan,
             count=count,
+            deposit=deposit,
             amount=amount,
             due=due,
         )
@@ -664,9 +667,6 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
 
     """
 
-    # the 'count' should be set to 1 for the deposit
-    DEPOSIT = 1
-
     contact_payment_plan = models.ForeignKey(ContactPaymentPlan)
     count = models.IntegerField()
     state = models.ForeignKey(
@@ -675,6 +675,7 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
         #blank=True,
         #null=True
     )
+    deposit = models.BooleanField(help_text='Is this the initial payment')
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     due = models.DateField(blank=True, null=True)
     objects = ContactPaymentPlanInstalmentManager()

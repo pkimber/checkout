@@ -32,6 +32,7 @@ class ContactPaymentPlanInstalmentFactory(factory.django.DjangoModelFactory):
         model = ContactPaymentPlanInstalment
 
     contact_payment_plan = factory.SubFactory(ContactPaymentPlanFactory)
+    deposit = False
     due = date.today()
     amount = Decimal('99.99')
 
