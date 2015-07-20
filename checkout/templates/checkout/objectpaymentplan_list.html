@@ -39,10 +39,10 @@
             {% for o in object_list %}
               <tr valign="top">
                 <td>
-                  {{ o.contact.user.get_full_name }}
+                  {{ o.content_object.checkout_name }}
                   <br />
-                  <a href="mailto:{{ o.contact.user.email }}?subject=Payment Plan" target="_blank">
-                    {{ o.contact.user.email }}
+                  <a href="mailto:{{ o.content_object.checkout_email }}?subject=Payment Plan" target="_blank">
+                    {{ o.content_object.checkout_email }}
                   </a>
                   <br />
                   <small>
