@@ -647,13 +647,11 @@ class ContactPaymentPlanInstalmentManager(models.Manager):
 class ContactPaymentPlanInstalment(TimeStampedModel):
     """Payments due for a contact.
 
-    The deposit record gets created first.  It has:
-
-    - ``count`` of ``1``
-    - ``due`` date of ``null``
+    The deposit record gets created first.  It has the ``deposit`` field set to
+    ``True``.
 
     The instalment records are created after the deposit has been collected.
-    Instalment records have a ``due`` date and a ``count`` greater than ``1``.
+    Instalment records have the ``deposit`` field set to ``False``.
 
     """
 
