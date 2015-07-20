@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 
 from checkout.models import (
-    ContactPaymentPlan,
+    ObjectPaymentPlan,
     PaymentPlan,
 )
 from contact.models import Contact
@@ -49,8 +49,7 @@ class Command(BaseCommand):
             2,
             1,
         )
-        ContactPaymentPlan.objects.create_contact_payment_plan(
-            contact,
+        ObjectPaymentPlan.objects.create_object_payment_plan(
             contact,
             payment_plan,
             Decimal('1000'),

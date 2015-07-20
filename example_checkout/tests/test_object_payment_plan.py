@@ -9,24 +9,24 @@ from django.db import transaction
 
 from checkout.models import (
     CheckoutError,
-    ContactPaymentPlan
+    ObjectPaymentPlan
 )
 from checkout.tests.factories import PaymentPlanFactory
 from .factories import (
     ContactFactory,
-    ContactPaymentPlanFactory,
-    ContactPaymentPlanInstalmentFactory,
+    ObjectPaymentPlanFactory,
+    ObjectPaymentPlanInstalmentFactory,
 )
 
 
 @pytest.mark.django_db
 def test_factory():
-    ContactPaymentPlanFactory()
+    ObjectPaymentPlanFactory()
 
 
 @pytest.mark.django_db
 def test_str():
-    str(ContactPaymentPlanFactory())
+    str(ObjectPaymentPlanFactory())
 
 
 @pytest.mark.django_db
@@ -40,24 +40,23 @@ def test_create_contact_plan():
     # create the contact plan with the deposit
     with transaction.atomic():
         # this must be run within a transaction
-        ContactPaymentPlan.objects.create_contact_payment_plan(
-            contact,
+        ObjectPaymentPlan.objects.create_object_payment_plan(
             contact,
             payment_plan,
             Decimal('100')
         )
-    contact_payment_plan = ContactPaymentPlan.objects.get(contact=contact)
+    object_payment_plan = ObjectPaymentPlan.objects.for_content_object(contact)
     # check deposit - count should be '1' and the 'due' date should be 'None'
     result = [
-        (p.count, p.amount, p.due) for p in contact_payment_plan.payments
+        (p.count, p.amount, p.due) for p in object_payment_plan.payments
     ]
     assert [(1, Decimal('20'), None)] == result
     # create the instalments
     with transaction.atomic():
         # this must be run within a transaction
-        contact_payment_plan.create_instalments()
+        object_payment_plan.create_instalments()
     result = [
-        (p.count, p.amount, p.due) for p in contact_payment_plan.payments
+        (p.count, p.amount, p.due) for p in object_payment_plan.payments
     ]
     assert [
         (1, Decimal('20'), None),
@@ -73,8 +72,7 @@ def test_create_contact_plan_create_instalments_once_only():
     # create the contact plan with the deposit
     with transaction.atomic():
         # this must be run within a transaction
-        contact_pp = ContactPaymentPlan.objects.create_contact_payment_plan(
-            contact,
+        contact_pp = ObjectPaymentPlan.objects.create_object_payment_plan(
             contact,
             payment_plan,
             Decimal('100')
@@ -90,7 +88,7 @@ def test_create_contact_plan_create_instalments_once_only():
 
 @pytest.mark.django_db
 def test_create_contact_plan_create_instalments_no_deposit():
-    obj = ContactPaymentPlanFactory()
+    obj = ObjectPaymentPlanFactory()
     with pytest.raises(CheckoutError) as e:
         obj.create_instalments()
     assert 'no deposit/instalment record' in str(e.value)
@@ -98,7 +96,7 @@ def test_create_contact_plan_create_instalments_no_deposit():
 
 @pytest.mark.django_db
 def test_create_contact_plan_create_instalments_corrupt():
-    obj = ContactPaymentPlanInstalmentFactory(count=2)
+    obj = ObjectPaymentPlanInstalmentFactory(count=2)
     with pytest.raises(CheckoutError) as e:
-        obj.contact_payment_plan.create_instalments()
+        obj.object_payment_plan.create_instalments()
     assert 'no deposit record' in str(e.value)

@@ -49,10 +49,7 @@ class SalesLedger(models.Model):
 
     @property
     def checkout_name(self):
-        return '{} {}'.format(
-            self.contact.user.first_name,
-            self.contact.user.last_name,
-        )
+        return '{}'.format(self.contact.user.get_full_name())
 
     @property
     def checkout_description(self):

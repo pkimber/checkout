@@ -32,7 +32,7 @@ from .models import (
     Checkout,
     CheckoutAction,
     CheckoutError,
-    ContactPaymentPlan,
+    ObjectPaymentPlan,
     CURRENCY,
     Customer,
     log_stripe_error,
@@ -175,11 +175,11 @@ class CheckoutMixin(object):
         return HttpResponseRedirect(url)
 
 
-class ContactPaymentPlanListView(
+class ObjectPaymentPlanListView(
         LoginRequiredMixin, StaffuserRequiredMixin,
         BaseMixin, ListView):
 
-    model = ContactPaymentPlan
+    model = ObjectPaymentPlan
     paginate_by = 10
 
 

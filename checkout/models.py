@@ -10,7 +10,7 @@ from dateutil.rrule import (
 from decimal import Decimal
 
 from django.conf import settings
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
@@ -283,8 +283,7 @@ class Checkout(TimeStampedModel):
     state = models.ForeignKey(
         CheckoutState,
         default=default_checkout_state
-        #blank=True,
-        #null=True
+        #blank=True, null=True
     )
     description = models.TextField()
     total = models.DecimalField(
@@ -293,7 +292,7 @@ class Checkout(TimeStampedModel):
     # link to the object in the system which requested the checkout
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
-    content_object = generic.GenericForeignKey()
+    content_object = GenericForeignKey()
     objects = CheckoutManager()
 
     class Meta:
@@ -485,23 +484,21 @@ class PaymentPlan(TimeStampedModel):
 reversion.register(PaymentPlan)
 
 
-class ContactPaymentPlanManager(models.Manager):
+class ObjectPaymentPlanManager(models.Manager):
 
-    def create_contact_payment_plan(
-            self, contact, content_object, payment_plan, total):
-        """Create a payment plan for the contact with the deposit record.
+    def create_object_payment_plan(self, content_object, payment_plan, total):
+        """Create a payment plan for the object with the deposit record.
 
         This method must be called from within a transaction.
 
         """
         obj = self.model(
-            contact=contact,
             content_object=content_object,
             payment_plan=payment_plan,
             total=total,
         )
         obj.save()
-        ContactPaymentPlanInstalment.objects.create_contact_payment_plan_instalment(
+        ObjectPaymentPlanInstalment.objects.create_object_payment_plan_instalment(
             obj,
             1,
             True,
@@ -510,39 +507,45 @@ class ContactPaymentPlanManager(models.Manager):
         )
         return obj
 
+    def for_content_object(self, obj):
+        return self.model.objects.get(
+            content_type=ContentType.objects.get_for_model(obj),
+            object_id=obj.pk
+        )
 
-class ContactPaymentPlan(TimeStampedModel):
-    """Payment plan for a contact."""
 
-    contact = models.ForeignKey(settings.CONTACT_MODEL)
-    payment_plan = models.ForeignKey(PaymentPlan)
-    total = models.DecimalField(max_digits=8, decimal_places=2)
+class ObjectPaymentPlan(TimeStampedModel):
+    """Payment plan for an object."""
+
     # link to the object in the system which requested the payment plan
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
-    content_object = generic.GenericForeignKey()
+    content_object = GenericForeignKey()
+    # payment plan
+    payment_plan = models.ForeignKey(PaymentPlan)
+    total = models.DecimalField(max_digits=8, decimal_places=2)
     # is this object deleted?
     deleted = models.BooleanField(default=False)
-    objects = ContactPaymentPlanManager()
+    objects = ObjectPaymentPlanManager()
 
     class Meta:
-        ordering = ('contact__user__username', 'payment_plan__slug')
+        ordering = ('created',)
         unique_together = ('object_id', 'content_type')
-        verbose_name = 'Contact payment plan'
-        verbose_name_plural = 'Contact payment plans'
+        verbose_name = 'Object payment plan'
+        verbose_name_plural = 'Object payment plans'
 
     def __str__(self):
-        return '{} {}'.format(self.contact.user.username, self.payment_plan.name)
+        return '{} created {}'.format(self.payment_plan.name, self.created)
 
     @property
     def _check_create_instalments(self):
         """Check the current records to make sure we can create instalments."""
-        instalments = ContactPaymentPlanInstalment.objects.filter(
-            contact_payment_plan=self
+        instalments = ObjectPaymentPlanInstalment.objects.filter(
+            object_payment_plan=self
         )
         count = instalments.count()
         if not count:
-            # a contact payment plan should always have a deposit record
+            # a payment plan should always have a deposit record
             raise CheckoutError(
                 "no deposit/instalment record set-up for "
                 "payment plan: '{}'".format(self.pk)
@@ -567,7 +570,7 @@ class ContactPaymentPlan(TimeStampedModel):
         count = 1
         for due, amount in instalments:
             count = count + 1
-            ContactPaymentPlanInstalment.objects.create_contact_payment_plan_instalment(
+            ObjectPaymentPlanInstalment.objects.create_object_payment_plan_instalment(
                 self,
                 count,
                 False,
@@ -577,21 +580,21 @@ class ContactPaymentPlan(TimeStampedModel):
 
     @property
     def payment_count(self):
-        return self.contactpaymentplaninstalment_set.count()
+        return self.objectpaymentplaninstalment_set.count()
 
     @property
     def payments(self):
-        return self.contactpaymentplaninstalment_set.all().order_by('due')
+        return self.objectpaymentplaninstalment_set.all().order_by('due')
 
-reversion.register(ContactPaymentPlan)
+reversion.register(ObjectPaymentPlan)
 
 
-class ContactPaymentPlanInstalmentManager(models.Manager):
+class ObjectPaymentPlanInstalmentManager(models.Manager):
 
-    def create_contact_payment_plan_instalment(
-            self, contact_payment_plan, count, deposit, amount, due):
+    def create_object_payment_plan_instalment(
+            self, object_payment_plan, count, deposit, amount, due):
         obj = self.model(
-            contact_payment_plan=contact_payment_plan,
+            object_payment_plan=object_payment_plan,
             count=count,
             deposit=deposit,
             amount=amount,
@@ -612,7 +615,7 @@ class ContactPaymentPlanInstalmentManager(models.Manager):
             due__gte=date.today(),
             state__slug=CheckoutState.PENDING,
         ).exclude(
-            contact_payment_plan__deleted=True,
+            object_payment_plan__deleted=True,
         )
 
     @property
@@ -644,8 +647,8 @@ class ContactPaymentPlanInstalmentManager(models.Manager):
             Checkout.objects.direct_debit(instalment)
 
 
-class ContactPaymentPlanInstalment(TimeStampedModel):
-    """Payments due for a contact.
+class ObjectPaymentPlanInstalment(TimeStampedModel):
+    """Payments due for an object.
 
     The deposit record gets created first.  It has the ``deposit`` field set to
     ``True``.
@@ -655,31 +658,29 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
 
     """
 
-    contact_payment_plan = models.ForeignKey(ContactPaymentPlan)
+    object_payment_plan = models.ForeignKey(ObjectPaymentPlan)
     count = models.IntegerField()
     state = models.ForeignKey(
         CheckoutState,
         default=default_checkout_state,
-        #blank=True,
-        #null=True
+        #blank=True, null=True
     )
     deposit = models.BooleanField(help_text='Is this the initial payment')
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     due = models.DateField(blank=True, null=True)
-    objects = ContactPaymentPlanInstalmentManager()
+    objects = ObjectPaymentPlanInstalmentManager()
 
     class Meta:
         unique_together = (
-            ('contact_payment_plan', 'due'),
-            ('contact_payment_plan', 'count'),
+            ('object_payment_plan', 'due'),
+            ('object_payment_plan', 'count'),
         )
-        verbose_name = 'Payments for a contact'
-        verbose_name_plural = 'Payments for a contact'
+        verbose_name = 'Payments for an object'
+        verbose_name_plural = 'Payments for an object'
 
     def __str__(self):
-        return '{} {} {} {}'.format(
-            self.contact_plan.contact.user.username,
-            self.contact_plan.payment_plan.name,
+        return '{} {} {}'.format(
+            self.object_plan.payment_plan.name,
             self.due,
             self.amount,
         )
@@ -692,17 +693,17 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
     def checkout_description(self):
         return [
             '{}'.format(
-                self.contact_payment_plan.payment_plan.name,
+                self.object_payment_plan.payment_plan.name,
             ),
             'Instalment {} of {}'.format(
                 self.count,
-                self.contact_payment_plan.payment_count,
+                self.object_payment_plan.payment_count,
             ),
         ]
 
     @property
     def checkout_email(self):
-        return self.contact_payment_plan.contact.user.email
+        return self.object_payment_plan.content_object.checkout_email
 
     @property
     def checkout_fail(self):
@@ -716,7 +717,7 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
 
     @property
     def checkout_name(self):
-        return self.contact_payment_plan.contact.user.get_full_name()
+        return self.object_payment_plan.content_object.checkout_name
 
     @property
     def checkout_success(self):
@@ -732,4 +733,4 @@ class ContactPaymentPlanInstalment(TimeStampedModel):
     def checkout_total(self):
         return self.amount
 
-reversion.register(ContactPaymentPlanInstalment)
+reversion.register(ObjectPaymentPlanInstalment)

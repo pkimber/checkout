@@ -5,8 +5,8 @@ from datetime import date
 from decimal import Decimal
 
 from checkout.models import (
-    ContactPaymentPlan,
-    ContactPaymentPlanInstalment,
+    ObjectPaymentPlan,
+    ObjectPaymentPlanInstalment,
 )
 from checkout.tests.factories import PaymentPlanFactory
 from contact.tests.factories import ContactFactory
@@ -15,23 +15,22 @@ from login.tests.factories import UserFactory
 from stock.tests.factories import ProductFactory
 
 
-class ContactPaymentPlanFactory(factory.django.DjangoModelFactory):
+class ObjectPaymentPlanFactory(factory.django.DjangoModelFactory):
 
     class Meta:
-        model = ContactPaymentPlan
+        model = ObjectPaymentPlan
 
-    contact = factory.SubFactory(ContactFactory)
     content_object = factory.SubFactory(ContactFactory)
     payment_plan = factory.SubFactory(PaymentPlanFactory)
     total = Decimal('100.00')
 
 
-class ContactPaymentPlanInstalmentFactory(factory.django.DjangoModelFactory):
+class ObjectPaymentPlanInstalmentFactory(factory.django.DjangoModelFactory):
 
     class Meta:
-        model = ContactPaymentPlanInstalment
+        model = ObjectPaymentPlanInstalment
 
-    contact_payment_plan = factory.SubFactory(ContactPaymentPlanFactory)
+    object_payment_plan = factory.SubFactory(ObjectPaymentPlanFactory)
     deposit = False
     due = date.today()
     amount = Decimal('99.99')

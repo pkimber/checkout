@@ -5,7 +5,7 @@ from checkout.models import CheckoutError
 
 
 def check_checkout(model_instance):
-    """The 'StripeCheckout' model links to generic content."""
+    """The 'Checkout' model links to generic content."""
     # can we create a payment instance (need to set url before save).
     # checkout = model_instance.create_checkout(token='123')
     #assert payment.paymentline_set.count() > 0, "no payment lines"
@@ -51,3 +51,9 @@ def check_checkout(model_instance):
     # the generic content must implement 'allow_pay_later'
     # model_instance.allow_pay_later()
     clean_and_save(model_instance)
+
+
+def check_object_payment_plan(model_instance):
+    """The 'ObjectPaymentPlan' model links to generic content."""
+    model_instance.checkout_email
+    model_instance.checkout_name
