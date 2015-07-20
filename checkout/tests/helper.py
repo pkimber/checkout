@@ -1,8 +1,6 @@
 # -*- encoding: utf-8 -*-
 from base.tests.model_maker import clean_and_save
 
-from checkout.models import CheckoutError
-
 
 def check_checkout(model_instance):
     """The 'Checkout' model links to generic content."""

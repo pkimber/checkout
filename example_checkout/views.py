@@ -9,10 +9,7 @@ from django.views.generic import (
 from braces.views import LoginRequiredMixin
 
 from base.view_utils import BaseMixin
-from checkout.models import (
-    Checkout,
-    CheckoutAction,
-)
+from checkout.models import Checkout
 from checkout.views import CheckoutMixin
 from .forms import (
     SalesLedgerCheckoutForm,

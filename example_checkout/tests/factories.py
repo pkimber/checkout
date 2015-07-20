@@ -11,7 +11,6 @@ from checkout.models import (
 from checkout.tests.factories import PaymentPlanFactory
 from contact.tests.factories import ContactFactory
 from example_checkout.models import SalesLedger
-from login.tests.factories import UserFactory
 from stock.tests.factories import ProductFactory
 
 

@@ -10,7 +10,6 @@ from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.views.generic import (
     CreateView,
-    DetailView,
     ListView,
     UpdateView,
 )
