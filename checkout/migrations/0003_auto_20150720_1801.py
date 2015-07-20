@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='checkout',
             name='state',
-            field=models.ForeignKey(to='checkout.CheckoutState', default=checkout.models.default_checkout_state),
+            field=models.ForeignKey(default=checkout.models.default_checkout_state, to='checkout.CheckoutState'),
         ),
         migrations.AlterField(
             model_name='objectpaymentplaninstalment',
             name='state',
-            field=models.ForeignKey(to='checkout.CheckoutState', default=checkout.models.default_checkout_state),
+            field=models.ForeignKey(default=checkout.models.default_checkout_state, to='checkout.CheckoutState'),
         ),
     ]

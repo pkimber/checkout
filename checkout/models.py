@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 import logging
+import uuid
 
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -279,7 +280,9 @@ class Checkout(TimeStampedModel):
 
     """
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     action = models.ForeignKey(
+
         CheckoutAction
     )
     customer = models.ForeignKey(Customer)
