@@ -100,6 +100,10 @@ class CheckoutState(TimeStampedModel):
     def __str__(self):
         return '{}'.format(self.name)
 
+    @property
+    def is_pending(self):
+        return self.slug == self.PENDING
+
 reversion.register(CheckoutState)
 
 
