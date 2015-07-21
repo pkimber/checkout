@@ -548,6 +548,11 @@ class ObjectPaymentPlanManager(models.Manager):
 
     @property
     def outstanding_payment_plans(self):
+        """List of outstanding payment plans.
+
+        Used to refresh card expiry dates.
+
+        """
         return self.model.objects.exclude(
             deleted=True,
         ).exclude(
@@ -555,17 +560,11 @@ class ObjectPaymentPlanManager(models.Manager):
         )
 
     def refresh_card_expiry_dates(self):
+        """Refresh the card expiry dates for outstanding payment plans."""
         for plan in self.outstanding_payment_plans:
-            try:
-                Customer.objects.update_card_expiry(
-                    plan.content_object.checkout_email
-                )
-            except Customer.DoesNotExist as e:
-                raise CheckoutError(
-                    "Customer '{}' has not registered a card".format(
-                        plan.content_object.checkout_email
-                    )
-                ) from e
+            Customer.objects.update_card_expiry(
+                plan.content_object.checkout_email
+            )
 
 
 class ObjectPaymentPlan(TimeStampedModel):
