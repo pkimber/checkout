@@ -3,6 +3,7 @@ from django import forms
 
 from .models import (
     CheckoutAction,
+    ObjectPaymentPlanInstalment,
     PaymentPlan,
 )
 
@@ -30,6 +31,13 @@ class CheckoutForm(forms.ModelForm):
         elif CheckoutAction.PAYMENT in actions:
             self.initial['action'] = CheckoutAction.PAYMENT
         self.fields['token'].widget = forms.HiddenInput()
+
+
+class ObjectPaymentPlanInstalmentEmptyForm(forms.ModelForm):
+
+    class Meta:
+        model = ObjectPaymentPlanInstalment
+        fields = ()
 
 
 class PaymentPlanEmptyForm(forms.ModelForm):

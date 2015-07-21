@@ -29,10 +29,10 @@ class SalesLedgerCheckoutDirectDebitUpdateView(
 
     model = SalesLedger
     form_class = SalesLedgerEmptyForm
-    template_name = 'example/direct_debit.html'
+    template_name = 'example/charge.html'
 
     def form_valid(self, form):
-        Checkout.objects.direct_debit(self.request.user, self.object)
+        Checkout.objects.charge(self.object, self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):

@@ -10,6 +10,7 @@ from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.views.generic import (
     CreateView,
+    DetailView,
     ListView,
     UpdateView,
 )
@@ -23,6 +24,7 @@ from base.view_utils import BaseMixin
 from mail.tasks import process_mail
 
 from .forms import (
+    ObjectPaymentPlanInstalmentEmptyForm,
     PaymentPlanEmptyForm,
     PaymentPlanForm,
 )
@@ -32,6 +34,7 @@ from .models import (
     CheckoutAction,
     CheckoutError,
     ObjectPaymentPlan,
+    ObjectPaymentPlanInstalment,
     CURRENCY,
     Customer,
     log_stripe_error,
@@ -148,7 +151,7 @@ class CheckoutMixin(object):
         action = CheckoutAction.objects.get(slug=slug)
         customer = Customer.objects.init_customer(self.object, token)
         checkout = Checkout.objects.create_checkout(
-            action, customer, self.request.user, self.object
+            action, self.object, customer, self.request.user
         )
         try:
             checkout.process()
@@ -180,6 +183,30 @@ class ObjectPaymentPlanListView(
 
     model = ObjectPaymentPlan
     paginate_by = 10
+
+
+class ObjectPaymentPlanInstalmentDetailView(
+        StaffuserRequiredMixin, LoginRequiredMixin, BaseMixin, DetailView):
+
+    model = ObjectPaymentPlanInstalment
+
+
+class ObjectPaymentPlanInstalmentChargeUpdateView(
+        StaffuserRequiredMixin, LoginRequiredMixin, BaseMixin, UpdateView):
+    """Charge the customer's card for this instalment."""
+
+    model = ObjectPaymentPlanInstalment
+    form_class = ObjectPaymentPlanInstalmentEmptyForm
+
+    def form_valid(self, form):
+        Checkout.objects.charge(self.object, self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            'checkout.contact.payment.plan.instalment',
+            args=[self.object.pk]
+        )
 
 
 class PaymentPlanCreateView(

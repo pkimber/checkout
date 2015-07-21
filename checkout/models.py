@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 import logging
-import uuid
 
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -111,7 +110,7 @@ reversion.register(CheckoutState)
 class CheckoutAction(TimeStampedModel):
 
     CARD_UPDATE = 'card_update'
-    DIRECT_DEBIT = 'direct_debit'
+    CHARGE = 'charge'
     PAYMENT = 'payment'
     PAYMENT_PLAN = 'payment_plan'
 
@@ -225,7 +224,7 @@ class CheckoutManager(models.Manager):
     def audit(self):
         return self.model.objects.all().order_by('-pk')
 
-    def create_checkout(self, action, customer, user, content_object):
+    def create_checkout(self, action, content_object, customer, user):
         """Create a checkout payment request."""
         obj = self.model(
             action=action,
@@ -237,7 +236,7 @@ class CheckoutManager(models.Manager):
         obj.save()
         return obj
 
-    def direct_debit(self, user, content_object):
+    def charge(self, content_object, user):
         """Collect some money from a customer.
 
         We should only attempt to collect money if the customer has already
@@ -280,11 +279,7 @@ class Checkout(TimeStampedModel):
 
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    action = models.ForeignKey(
-
-        CheckoutAction
-    )
+    action = models.ForeignKey(CheckoutAction)
     customer = models.ForeignKey(Customer)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
     state = models.ForeignKey(
@@ -651,7 +646,7 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
                 instalment.state = CheckoutState.objects.request
                 instalment.save()
             # request payment
-            Checkout.objects.direct_debit(instalment)
+            Checkout.objects.charge(instalment, self.request.user)
 
 
 class ObjectPaymentPlanInstalment(TimeStampedModel):
