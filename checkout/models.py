@@ -136,6 +136,9 @@ class CustomerManager(models.Manager):
         obj.save()
         return obj
 
+    def _get_customer(self, email):
+        return self.model.objects.get(email=email)
+
     def _stripe_create(self, email, description, token):
         """Use the Stripe API to create a customer."""
         try:
@@ -149,6 +152,19 @@ class CustomerManager(models.Manager):
         except stripe.StripeError as e:
             log_stripe_error(logger, e, '_stripe_create - email: {}'.format(email))
             raise CheckoutError('Error creating Stripe customer') from e
+
+    def _stripe_get_card_expiry(self, customer_id):
+        result = (0, 0)
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        customer = stripe.Customer.retrieve(customer_id)
+        default_card = customer['default_card']
+        # find the details of the default card
+        for card in customer['cards']['data']:
+            if card['id'] == default_card:
+                # find the expiry date of the default card
+                result = (int(card['exp_year']), int(card['exp_month']))
+                break
+        return result
 
     def _stripe_update(self, customer_id, description, token):
         """Use the Stripe API to update a customer."""
@@ -180,7 +196,7 @@ class CustomerManager(models.Manager):
         name = content_object.checkout_name
         email = content_object.checkout_email
         try:
-            obj = self.model.objects.get(email=email)
+            obj = self._get_customer(email)
             obj.name = name
             obj.save()
             self._stripe_update(obj.customer_id, name, token)
@@ -188,6 +204,17 @@ class CustomerManager(models.Manager):
             customer_id = self._stripe_create(email, name, token)
             obj = self._create_customer(name, email, customer_id)
         return obj
+
+    def update_card_expiry(self, email):
+        obj = self._get_customer(email)
+        year, month = self._stripe_get_card_expiry(obj.customer_id)
+        if year and month:
+            # last day of the month
+            obj.expiry_date = date(year, month, 1) + relativedelta(
+                months=+1, day=1, days=-1
+            )
+            # save the details
+            obj.save()
 
 
 class Customer(TimeStampedModel):
@@ -251,7 +278,9 @@ class CheckoutManager(models.Manager):
             )
         except Customer.DoesNotExist as e:
             raise CheckoutError(
-                'Customer has not registered a card'
+                "Customer '{}' has not registered a card".format(
+                    content_object.checkout_email
+                )
             ) from e
         action = CheckoutAction.objects.get(slug=CheckoutAction.CHARGE)
         checkout = self.create_checkout(
@@ -526,7 +555,17 @@ class ObjectPaymentPlanManager(models.Manager):
         )
 
     def refresh_card_expiry_dates(self):
-        pass
+        for plan in self.outstanding_payment_plans:
+            try:
+                Customer.objects.update_card_expiry(
+                    plan.content_object.checkout_email
+                )
+            except Customer.DoesNotExist as e:
+                raise CheckoutError(
+                    "Customer '{}' has not registered a card".format(
+                        plan.content_object.checkout_email
+                    )
+                ) from e
 
 
 class ObjectPaymentPlan(TimeStampedModel):
