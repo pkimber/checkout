@@ -23,6 +23,38 @@ from .factories import (
 
 
 @pytest.mark.django_db
+def test_can_charge_fail():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        state=CheckoutState.objects.fail
+    )
+    assert obj.can_charge
+
+
+@pytest.mark.django_db
+def test_can_charge_pending():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        state=CheckoutState.objects.pending
+    )
+    assert obj.can_charge
+
+
+@pytest.mark.django_db
+def test_can_charge_request():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        state=CheckoutState.objects.request
+    )
+    assert not obj.can_charge
+
+
+@pytest.mark.django_db
+def test_can_charge_success():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        state=CheckoutState.objects.success
+    )
+    assert not obj.can_charge
+
+
+@pytest.mark.django_db
 def test_check_checkout():
     with transaction.atomic():
         # this must be run within a transaction
@@ -254,4 +286,4 @@ def test_process_payments():
 
 @pytest.mark.django_db
 def test_str():
-    str(ObjectPaymentPlanFactory())
+    str(ObjectPaymentPlanInstalmentFactory())

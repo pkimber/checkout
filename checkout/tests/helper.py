@@ -24,6 +24,7 @@ def check_checkout(model_instance):
     #        "{}.checkout_actions' should return a list of "
     #        "checkout actions".format(model_instance.__class__.__name__)
     #    )
+    model_instance.checkout_can_charge
     model_instance.checkout_email
     model_instance.checkout_description
     model_instance.checkout_name

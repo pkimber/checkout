@@ -56,6 +56,8 @@
                 </td>
                 <td>
                   <small>
+                    Total: &pound;{{ o.total }}
+                    <br />
                     {% for item in o.payments %}
                       {{ item.count }}.
                       {{ item.due|date:'d/m/Y' }}
@@ -67,10 +69,12 @@
                       {% endif %}
                       ({{ item.state.name }})
                       <br />
-                      <a href="">
-                        <i class="fa fa-credit-card"></i>
-                        Charge now...
-                      </a>
+                      {% if item.checkout_can_charge %}
+                        <a href="{% url 'checkout.object.payment.plan.instalment.charge' item.pk %}">
+                          <i class="fa fa-credit-card"></i>
+                          Charge now...
+                        </a>
+                      {% endif %}
                       <br />
                     {% endfor %}
                   </small>

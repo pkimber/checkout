@@ -24,7 +24,7 @@ class HomeView(ListView):
     template_name = 'example/home.html'
 
 
-class SalesLedgerCheckoutDirectDebitUpdateView(
+class SalesLedgerChargeUpdateView(
         LoginRequiredMixin, BaseMixin, UpdateView):
 
     model = SalesLedger

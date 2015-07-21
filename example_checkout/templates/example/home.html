@@ -22,7 +22,7 @@
               <th>Price</th>
               <th>Quantity</th>
               <th>Action</th>
-              <th>D/Debit</th>
+              <th>Charge</th>
             </tr>
           </thead>
           <tbody>
@@ -39,9 +39,9 @@
                   </a>
                 </td>
                 <td>
-                  <a href="{% url 'example.sales.ledger.checkout.direct.debit' p.pk %}">
-                    <i class="fa fa-money"></i>
-                    D/Debit
+                  <a href="{% url 'example.sales.ledger.charge' p.pk %}">
+                    <i class="fa fa-credit-card"></i>
+                    Charge
                   </a>
                 </td>
               </tr>

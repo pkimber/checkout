@@ -1,0 +1,44 @@
+<table class="pure-table pure-table-bordered">
+  <tbody>
+    <tr valign="top">
+      <td>
+        Name
+      </td>
+      <td>
+        {{ object.checkout_name }}
+      </td>
+    </tr>
+    <tr valign="top">
+      <td>
+        email
+      </td>
+      <td>
+        {{ object.checkout_email }}
+      </td>
+    </tr>
+    <tr valign="top">
+      <td>
+        State
+      </td>
+      <td>
+        {{ object.state.name }}
+      </td>
+    </tr>
+    <tr valign="top">
+      <td>
+        Amount
+      </td>
+      <td>
+        {{ object.amount }}
+      </td>
+    </tr>
+    <tr valign="top">
+      <td>
+        Due
+      </td>
+      <td>
+        {{ object.due|date:'d/m/Y' }}
+      </td>
+    </tr>
+  </tbody>
+</table>

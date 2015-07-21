@@ -243,6 +243,8 @@ class CheckoutManager(models.Manager):
         entered their card details.
 
         """
+        if not content_object.checkout_can_charge:
+            raise CheckoutError('Cannot charge the card.')
         try:
             customer = Customer.objects.get(
                 email=content_object.checkout_email
@@ -251,12 +253,12 @@ class CheckoutManager(models.Manager):
             raise CheckoutError(
                 'Customer has not registered a card'
             ) from e
-        action = CheckoutAction.objects.get(slug=CheckoutAction.DIRECT_DEBIT)
+        action = CheckoutAction.objects.get(slug=CheckoutAction.CHARGE)
         checkout = self.create_checkout(
             action,
+            content_object,
             customer,
-            user,
-            content_object
+            user
         )
         try:
             checkout.process()
@@ -682,7 +684,7 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
 
     def __str__(self):
         return '{} {} {}'.format(
-            self.object_plan.payment_plan.name,
+            self.object_payment_plan.payment_plan.name,
             self.due,
             self.amount,
         )
@@ -690,6 +692,11 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     def get_absolute_url(self):
         """TODO Update this to display the payment plan."""
         return reverse('project.home')
+
+    @property
+    def checkout_can_charge(self):
+        """Check we can take the payment."""
+        return self.state.slug in (CheckoutState.FAIL, CheckoutState.PENDING)
 
     @property
     def checkout_description(self):

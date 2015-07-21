@@ -4,6 +4,7 @@ import logging
 import stripe
 
 from django.conf import settings
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db import transaction
@@ -198,13 +199,21 @@ class ObjectPaymentPlanInstalmentChargeUpdateView(
     model = ObjectPaymentPlanInstalment
     form_class = ObjectPaymentPlanInstalmentEmptyForm
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if not self.object.checkout_can_charge:
+            messages.warning(
+                self.request, 'Payment cannot be taken for this instalment.'
+            )
+        return context
+
     def form_valid(self, form):
         Checkout.objects.charge(self.object, self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse(
-            'checkout.contact.payment.plan.instalment',
+            'checkout.object.payment.plan.instalment',
             args=[self.object.pk]
         )
 

@@ -1,0 +1,20 @@
+{% extends 'project/base.html' %}
+
+{% block sub_title %}
+  Instalment - Charge Card
+{% endblock sub_title %}
+
+{% block sub_heading %}
+  Instalment - Charge Card
+{% endblock sub_heading %}
+
+{% block content %}
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <div class="l-box">
+        {% include 'checkout/_object_payment_plan_instalment.html' %}
+        {% include '_form.html' with submit='Charge card' %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
