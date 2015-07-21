@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView
 
 from .views import (
+    ExampleRefreshExpiryDatesFormView,
     HomeView,
     SalesLedgerChargeUpdateView,
     SalesLedgerCheckoutUpdateView,
@@ -38,6 +39,10 @@ urlpatterns = patterns(
     url(r'^home/user/$',
         view=RedirectView.as_view(url=reverse_lazy('project.home')),
         name='project.dash'
+        ),
+    url(regex=r'^example/refresh/card/expiry/dates/$',
+        view=ExampleRefreshExpiryDatesFormView.as_view(),
+        name='example.refresh.card.expiry.dates'
         ),
     url(regex=r'^sales/ledger/(?P<pk>\d+)/charge/$',
         view=SalesLedgerChargeUpdateView.as_view(),

@@ -5,6 +5,10 @@ from checkout.forms import CheckoutForm
 from .models import SalesLedger
 
 
+class EmptyForm(forms.Form):
+    pass
+
+
 class SalesLedgerCheckoutForm(CheckoutForm):
 
     class Meta:

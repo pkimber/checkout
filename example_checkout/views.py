@@ -1,7 +1,10 @@
 # -*- encoding: utf-8 -*-
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
+from django.utils import timezone
 from django.views.generic import (
+    FormView,
     ListView,
     UpdateView,
 )
@@ -9,13 +12,33 @@ from django.views.generic import (
 from braces.views import LoginRequiredMixin
 
 from base.view_utils import BaseMixin
-from checkout.models import Checkout
+from checkout.models import (
+    Checkout,
+    ObjectPaymentPlan,
+)
 from checkout.views import CheckoutMixin
 from .forms import (
+    EmptyForm,
     SalesLedgerCheckoutForm,
     SalesLedgerEmptyForm,
 )
 from .models import SalesLedger
+
+
+class ExampleRefreshExpiryDatesFormView(FormView):
+
+    form_class = EmptyForm
+    template_name = 'example/refresh_expiry_dates.html'
+
+    def form_valid(self, form):
+        ObjectPaymentPlan.objects.refresh_card_expiry_dates()
+        messages.success(self.request, 'Completed card refresh at {}'.format(
+            timezone.now().strftime('%H:%M:%S on the %d/%m/%Y')
+        ))
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse('example.refresh.card.expiry.dates')
 
 
 class HomeView(ListView):
