@@ -10,7 +10,10 @@ from checkout.models import (
 from contact.models import Contact
 from example_checkout.models import SalesLedger
 from finance.models import VatSettings
-from login.tests.scenario import get_user_web
+from login.tests.scenario import (
+    get_user_staff,
+    get_user_web,
+)
 from mail.models import Notify
 from stock.models import (
     Product,
@@ -34,12 +37,16 @@ class Command(BaseCommand):
         pencil = Product.objects.create_product(
             'pencil', 'Pencil', '', Decimal('1.32'), stationery
         )
-        contact = Contact.objects.create_contact(user=get_user_web())
+        contact_1 = Contact.objects.create_contact(user=get_user_web())
         SalesLedger.objects.create_sales_ledger(
-            contact, pencil, 2
+            contact_1, pencil, 2
         )
         SalesLedger.objects.create_sales_ledger(
-            contact, pencil, 1
+            contact_1, pencil, 1
+        )
+        contact_2 = Contact.objects.create_contact(user=get_user_staff())
+        SalesLedger.objects.create_sales_ledger(
+            contact_2, pencil, 6
         )
         payment_plan = PaymentPlan.objects.create_payment_plan(
             'default',
@@ -49,8 +56,13 @@ class Command(BaseCommand):
             1,
         )
         ObjectPaymentPlan.objects.create_object_payment_plan(
-            contact,
+            contact_1,
             payment_plan,
             Decimal('1000'),
+        )
+        ObjectPaymentPlan.objects.create_object_payment_plan(
+            contact_2,
+            payment_plan,
+            Decimal('400'),
         )
         print("Created 'checkout' demo data...")

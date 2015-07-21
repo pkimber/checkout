@@ -559,6 +559,22 @@ class ObjectPaymentPlanManager(models.Manager):
             objectpaymentplaninstalment__state__slug=CheckoutState.SUCCESS
         )
 
+    @property
+    def report_card_expiry_dates(self):
+        result = []
+        for object_payment_plan in self.outstanding_payment_plans:
+            customer = Customer.objects.get(
+                email=object_payment_plan.content_object.checkout_email
+            )
+            result.append(dict(
+                expiry_date=customer.expiry_date,
+                object_payment_plan=object_payment_plan,
+            ))
+        return sorted(
+            result,
+            key=lambda item: item.get('expiry_date')
+        )
+
     def refresh_card_expiry_dates(self):
         """Refresh the card expiry dates for outstanding payment plans."""
         for plan in self.outstanding_payment_plans:

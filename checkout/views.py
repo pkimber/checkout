@@ -186,6 +186,17 @@ class ObjectPaymentPlanListView(
     paginate_by = 10
 
 
+class ObjectPaymentPlanCardExpiryListView(
+        LoginRequiredMixin, StaffuserRequiredMixin,
+        BaseMixin, ListView):
+
+    paginate_by = 10
+    template_name = 'checkout/card_expiry_list.html'
+
+    def get_queryset(self):
+        return ObjectPaymentPlan.objects.report_card_expiry_dates
+
+
 class ObjectPaymentPlanInstalmentDetailView(
         StaffuserRequiredMixin, LoginRequiredMixin, BaseMixin, DetailView):
 
