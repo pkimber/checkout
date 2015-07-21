@@ -10,80 +10,79 @@
 {% endblock sub_heading %}
 
 {% block content %}
-  {% include 'checkout/_checkout_menu.html' %}
-  {% if is_paginated %}
-    <div class="pure-g">
-      <div class="pure-u-1">
-        {% include 'base/_paginate.html' %}
-      </div>
-    </div>
-  {% endif %}
   <div class="pure-g">
     <div class="pure-u-1">
-      <div class="l-box">
-        <table class="pure-table pure-table-bordered" width="100%">
-          <thead>
+      <div class="pure-menu pure-menu-horizontal">
+        <ul class="pure-menu-list">
+          {% include 'base/_paginate.html' %}
+          {% include 'checkout/_checkout_menu.html' %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <table class="pure-table pure-table-bordered" width="100%">
+        <thead>
+          <tr valign="top">
+            <td>
+              Name
+            </td>
+            <td>
+              Created
+            </td>
+            <td>
+              Payments
+            </td>
+          </tr>
+        </tbody>
+        <tbody>
+          {% for o in object_list %}
             <tr valign="top">
               <td>
-                Name
+                {{ o.content_object.checkout_name }}
+                <br />
+                <a href="mailto:{{ o.content_object.checkout_email }}?subject=Payment Plan" target="_blank">
+                  {{ o.content_object.checkout_email }}
+                </a>
+                <br />
+                <small>
+                  {{ o.payment_plan.name }}
+                </small>
               </td>
               <td>
-                Created
+                {{ o.created|date:'d/m/Y' }}
+                <br />
+                {{ o.created|date:'H:i' }}
               </td>
               <td>
-                Payments
+                <small>
+                  Total: &pound;{{ o.total }}
+                  <br />
+                  {% for item in o.payments %}
+                    {{ item.count }}.
+                    {{ item.due|date:'d/m/Y' }}
+                    &pound;{{ item.amount }}
+                    {% if forloop.first %}
+                      deposit
+                    {% elif forloop.last %}
+                      final
+                    {% endif %}
+                    ({{ item.state.name }})
+                    {% if item.checkout_can_charge %}
+                      <a href="{% url 'checkout.object.payment.plan.instalment.charge' item.pk %}">
+                        <i class="fa fa-credit-card"></i>
+                        Charge now...
+                      </a>
+                    {% endif %}
+                    <br />
+                  {% endfor %}
+                </small>
               </td>
             </tr>
-          </tbody>
-          <tbody>
-            {% for o in object_list %}
-              <tr valign="top">
-                <td>
-                  {{ o.content_object.checkout_name }}
-                  <br />
-                  <a href="mailto:{{ o.content_object.checkout_email }}?subject=Payment Plan" target="_blank">
-                    {{ o.content_object.checkout_email }}
-                  </a>
-                  <br />
-                  <small>
-                    {{ o.payment_plan.name }}
-                  </small>
-                </td>
-                <td>
-                  {{ o.created|date:'d/m/Y' }}
-                  <br />
-                  {{ o.created|date:'H:i' }}
-                </td>
-                <td>
-                  <small>
-                    Total: &pound;{{ o.total }}
-                    <br />
-                    {% for item in o.payments %}
-                      {{ item.count }}.
-                      {{ item.due|date:'d/m/Y' }}
-                      &pound;{{ item.amount }}
-                      {% if forloop.first %}
-                        deposit
-                      {% elif forloop.last %}
-                        final
-                      {% endif %}
-                      ({{ item.state.name }})
-                      <br />
-                      {% if item.checkout_can_charge %}
-                        <a href="{% url 'checkout.object.payment.plan.instalment.charge' item.pk %}">
-                          <i class="fa fa-credit-card"></i>
-                          Charge now...
-                        </a>
-                      {% endif %}
-                      <br />
-                    {% endfor %}
-                  </small>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 {% endblock content %}

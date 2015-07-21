@@ -23,11 +23,38 @@ from .factories import (
 
 
 @pytest.mark.django_db
+def test_can_charge_due():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        due=date.today(),
+        state=CheckoutState.objects.pending
+    )
+    assert obj.checkout_can_charge
+
+
+@pytest.mark.django_db
+def test_can_charge_overdue():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        due=date.today()+relativedelta(days=-10),
+        state=CheckoutState.objects.pending
+    )
+    assert obj.checkout_can_charge
+
+
+@pytest.mark.django_db
+def test_can_charge_due_not_yet():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        due=date.today()+relativedelta(days=10),
+        state=CheckoutState.objects.pending
+    )
+    assert not obj.checkout_can_charge
+
+
+@pytest.mark.django_db
 def test_can_charge_fail():
     obj = ObjectPaymentPlanInstalmentFactory(
         state=CheckoutState.objects.fail
     )
-    assert obj.can_charge
+    assert obj.checkout_can_charge
 
 
 @pytest.mark.django_db
@@ -35,7 +62,7 @@ def test_can_charge_pending():
     obj = ObjectPaymentPlanInstalmentFactory(
         state=CheckoutState.objects.pending
     )
-    assert obj.can_charge
+    assert obj.checkout_can_charge
 
 
 @pytest.mark.django_db
@@ -43,7 +70,7 @@ def test_can_charge_request():
     obj = ObjectPaymentPlanInstalmentFactory(
         state=CheckoutState.objects.request
     )
-    assert not obj.can_charge
+    assert not obj.checkout_can_charge
 
 
 @pytest.mark.django_db
@@ -51,7 +78,7 @@ def test_can_charge_success():
     obj = ObjectPaymentPlanInstalmentFactory(
         state=CheckoutState.objects.success
     )
-    assert not obj.can_charge
+    assert not obj.checkout_can_charge
 
 
 @pytest.mark.django_db
@@ -83,6 +110,14 @@ def test_checkout_description():
         payment_plan,
         Decimal('100'),
     )
+    # check deposit description
+    deposit = ObjectPaymentPlanInstalment.objects.filter(
+        object_payment_plan=contact_pp
+    )
+    assert 1 == deposit.count()
+    assert [
+        'pkimber', 'Deposit'
+    ] == deposit[0].checkout_description
     # create the instalments
     contact_pp.create_instalments()
     # check

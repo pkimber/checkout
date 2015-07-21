@@ -32,13 +32,15 @@
         {{ object.amount }}
       </td>
     </tr>
-    <tr valign="top">
-      <td>
-        Due
-      </td>
-      <td>
-        {{ object.due|date:'d/m/Y' }}
-      </td>
-    </tr>
+    {% if object.due %}
+      <tr valign="top">
+        <td>
+          Due
+        </td>
+        <td>
+          {{ object.due|date:'d/m/Y' }}
+        </td>
+      </tr>
+    {% endif %}
   </tbody>
 </table>

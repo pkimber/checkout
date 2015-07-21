@@ -209,6 +209,9 @@ class ObjectPaymentPlanInstalmentChargeUpdateView(
 
     def form_valid(self, form):
         Checkout.objects.charge(self.object, self.request.user)
+        if self.object.deposit:
+            with transaction.atomic():
+                self.object.object_payment_plan.create_instalments()
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):

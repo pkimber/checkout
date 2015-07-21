@@ -696,19 +696,29 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     @property
     def checkout_can_charge(self):
         """Check we can take the payment."""
-        return self.state.slug in (CheckoutState.FAIL, CheckoutState.PENDING)
+        result = False
+        if self.state.slug in (CheckoutState.FAIL, CheckoutState.PENDING):
+            if self.due:
+                result = self.due <= date.today()
+            else:
+                result = True
+        return result
 
     @property
     def checkout_description(self):
-        return [
+        result = [
             '{}'.format(
                 self.object_payment_plan.payment_plan.name,
             ),
-            'Instalment {} of {}'.format(
+        ]
+        if self.deposit:
+            result.append('Deposit')
+        else:
+            result.append('Instalment {} of {}'.format(
                 self.count,
                 self.object_payment_plan.payment_count,
-            ),
-        ]
+            ))
+        return result
 
     @property
     def checkout_email(self):

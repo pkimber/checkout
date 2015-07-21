@@ -48,6 +48,11 @@ class SalesLedger(models.Model):
         ]
 
     @property
+    def checkout_can_charge(self):
+        """We can always take a payment for this object!"""
+        return True
+
+    @property
     def checkout_name(self):
         return '{}'.format(self.contact.user.get_full_name())
 

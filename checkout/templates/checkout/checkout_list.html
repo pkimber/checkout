@@ -16,10 +16,23 @@
 {% endblock sub_heading %}
 
 {% block content %}
-  {% include 'checkout/_checkout_menu.html' %}
   <div class="pure-g">
     <div class="pure-u-1">
-      {% include 'base/_paginate.html' %}
+      <div class="pure-menu pure-menu-horizontal">
+        <ul class="pure-menu-list">
+          <li class="pure-menu-item">
+            <a href="{% url 'project.settings' %}" class="pure-menu-link">
+              <i class="fa fa-reply"></i>
+            </a>
+          </li>
+          {% include 'base/_paginate.html' %}
+          {% include 'checkout/_checkout_menu.html' %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="pure-g">
+    <div class="pure-u-1">
       {% include 'checkout/_checkout_list.html' %}
       {% include 'base/_paginate.html' %}
     </div>

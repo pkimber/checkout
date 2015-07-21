@@ -11,9 +11,21 @@
 {% block content %}
   <div class="pure-g">
     <div class="pure-u-1">
-      <div class="l-box">
-        {% include 'checkout/_object_payment_plan_instalment.html' %}
+      <div class="pure-menu pure-menu-horizontal">
+        <ul class="pure-menu-list">
+          <li class="pure-menu-item">
+            <a href="{% url 'checkout.object.payment.plan.list' %}" class="pure-menu-link">
+              <i class="fa fa-reply"></i>
+            </a>
+          </li>
+          {% include 'checkout/_checkout_menu.html' %}
+        </ul>
       </div>
+    </div>
+  </div>
+  <div class="pure-g">
+    <div class="pure-u-1">
+      {% include 'checkout/_object_payment_plan_instalment.html' %}
     </div>
   </div>
 {% endblock %}
