@@ -517,6 +517,17 @@ class ObjectPaymentPlanManager(models.Manager):
             object_id=obj.pk
         )
 
+    @property
+    def outstanding_payment_plans(self):
+        return self.model.objects.exclude(
+            deleted=True,
+        ).exclude(
+            objectpaymentplaninstalment__state__slug=CheckoutState.SUCCESS
+        )
+
+    def refresh_card_expiry_dates(self):
+        pass
+
 
 class ObjectPaymentPlan(TimeStampedModel):
     """Payment plan for an object."""

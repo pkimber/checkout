@@ -9,6 +9,7 @@ from django.db import transaction
 
 from checkout.models import (
     CheckoutError,
+    CheckoutState,
     ObjectPaymentPlan
 )
 from checkout.tests.factories import PaymentPlanFactory
@@ -30,7 +31,7 @@ def test_str():
 
 
 @pytest.mark.django_db
-def test_create_contact_plan():
+def test_create_object_payment_plan():
     contact = ContactFactory()
     payment_plan = PaymentPlanFactory(
         deposit=20,
@@ -66,7 +67,7 @@ def test_create_contact_plan():
 
 
 @pytest.mark.django_db
-def test_create_contact_plan_create_instalments_once_only():
+def test_create_instalments_once_only():
     contact = ContactFactory()
     payment_plan = PaymentPlanFactory(deposit=20, count=2, interval=1)
     # create the contact plan with the deposit
@@ -87,7 +88,7 @@ def test_create_contact_plan_create_instalments_once_only():
 
 
 @pytest.mark.django_db
-def test_create_contact_plan_create_instalments_no_deposit():
+def test_create_instalments_no_deposit():
     obj = ObjectPaymentPlanFactory()
     with pytest.raises(CheckoutError) as e:
         obj.create_instalments()
@@ -95,8 +96,27 @@ def test_create_contact_plan_create_instalments_no_deposit():
 
 
 @pytest.mark.django_db
-def test_create_contact_plan_create_instalments_corrupt():
+def test_create_instalments_corrupt():
     obj = ObjectPaymentPlanInstalmentFactory(count=2)
     with pytest.raises(CheckoutError) as e:
         obj.object_payment_plan.create_instalments()
     assert 'no deposit record' in str(e.value)
+
+
+@pytest.mark.django_db
+def test_outstanding_payment_plans():
+    assert 0 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
+
+
+@pytest.mark.django_db
+def test_outstanding_payment_plans_exclude_deleted():
+    ObjectPaymentPlanInstalmentFactory()
+    ObjectPaymentPlanInstalmentFactory(state=CheckoutState.objects.success)
+    assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
+
+
+@pytest.mark.django_db
+def test_outstanding_payment_plans_exclude_success():
+    ObjectPaymentPlanInstalmentFactory()
+    ObjectPaymentPlanInstalmentFactory(state=CheckoutState.objects.success)
+    assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
