@@ -2,6 +2,37 @@
 <script src="https://checkout.stripe.com/checkout.js"></script>
 <script>
 
+
+    function displayInvoiceSection() {
+        var action_data = {{ action_data|safe }};
+        // only hide invoice fields if 'invoice' is an available option
+        if (action_data['invoice']) {
+            var visible = false;
+            // which radio button is selected?
+            var action = $('#id_checkout_form input[type=radio]:checked').val();
+            var display = (action === 'invoice');
+            // is the invoice section already visible?
+            var visible = $('#id_invoice_name').is(":visible");
+            if (display && visible) {
+                // pass
+            } else if (!display && !visible) {
+                // pass
+            } else {
+                $('#id_invoice_name').parent().toggle(display);
+                $('#id_invoice_email').parent().toggle(display);
+            }
+        }
+    }
+
+    $(function(){
+        // show or hide the invoice section
+        $('#id_checkout_form input[type=radio]').change(function () {
+            displayInvoiceSection();
+        });
+        // initialise
+        displayInvoiceSection();
+    });
+
     var handler = StripeCheckout.configure({
         name: '{{ name }}',
         email: '{{ email }}',
@@ -23,22 +54,24 @@
         if (!action) {
             action = $('#id_checkout_form #id_action').val();
         }
-        var action_data = {{ action_data|safe }};
-        var data = action_data[action];
-        var caption = data['name'];
-        var is_payment = data['payment'];
-        options = {
-            panelLabel: caption
-        };
-        if (is_payment) {
-            options.amount = {{ total }};
-            options.currency = "{{ currency }}";
+        if (action != 'invoice') {
+            var action_data = {{ action_data|safe }};
+            var data = action_data[action];
+            var caption = data['name'];
+            var is_payment = data['payment'];
+            options = {
+                panelLabel: caption
+            };
+            if (is_payment) {
+                options.amount = {{ total }};
+                options.currency = "{{ currency }}";
+            }
+            if (action) {
+                // Open Checkout with further options
+                handler.open(options);
+            }
+            e.preventDefault();
         }
-        if (action) {
-            // Open Checkout with further options
-            handler.open(options);
-        }
-        e.preventDefault();
     });
 
     // Close Checkout on page navigation

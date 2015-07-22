@@ -38,7 +38,6 @@ from .models import (
     ObjectPaymentPlanInstalment,
     CURRENCY,
     Customer,
-    log_stripe_error,
     PaymentPlan,
 )
 
@@ -108,6 +107,17 @@ class CheckoutMixin(object):
             )
         return json.dumps(result)
 
+    def _form_valid_invoice(self, form):
+        #import ipdb
+        #ipdb.set_trace()
+        pass
+
+    def _form_valid_stripe(self, checkout, token):
+        customer = Customer.objects.init_customer(self.object, token)
+        checkout.customer = customer
+        checkout.save()
+        checkout.charge_user(self.request.user)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         _check_perm(self.request, self.object)
@@ -126,49 +136,38 @@ class CheckoutMixin(object):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update(dict(
-            actions=self.object.checkout_actions,
-        ))
+        kwargs.update(dict(actions=self.object.checkout_actions))
         return kwargs
 
-    def form_valid(self, form):
-        """
+    #def form_invalid(self, form):
+    #    import ipdb
+    #    ipdb.set_trace()
+    #    print(form)
 
-        TODO PJK This view is trying to update the model in the standard form
-        update view way (``form.save()``) and is also trying to process the
-        payment on the model.  I think it would be better if we didn't do the
-        standard form save, but just processed the payment.  This would be
-        similar to the way we use the ``UpdateView`` for deleting models.
+    def form_valid(self, form):
+        """Process the payment.
+
+        Note: We do NOT update 'self.object'
 
         """
         self.object = form.save(commit=False)
-        checkout = None
         token = form.cleaned_data['token']
         slug = form.cleaned_data['action']
         action = CheckoutAction.objects.get(slug=slug)
-        customer = Customer.objects.init_customer(self.object, token)
         checkout = Checkout.objects.create_checkout(
-            action, self.object, customer, self.request.user
+            action, self.object, self.request.user
         )
+        if action.invoice:
+            self._form_valid_invoice(form)
+        else:
+            self._form_valid_stripe(checkout, token)
         try:
-            logger.error('testing, testing')
-            checkout.charge_user(self.request.user)
             with transaction.atomic():
-                #self.object = form.save()
                 checkout.success()
                 checkout.notify(self.request)
             url = self.object.checkout_success_url
             process_mail.delay()
         except CheckoutError:
-            with transaction.atomic():
-                checkout.fail()
-            url = self.object.checkout_fail_url
-        except stripe.StripeError as e:
-            # TODO Move the exception handling into the model and just throw (and catch) a new 'CheckoutFail' exception.
-            log_stripe_error(logger, e, 'checkout: {} content_object: {}'.format(
-                checkout.pk if checkout else None,
-                self.object.pk
-            ))
             with transaction.atomic():
                 checkout.fail()
             url = self.object.checkout_fail_url

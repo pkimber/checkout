@@ -11,7 +11,12 @@ from .models import (
 class CheckoutForm(forms.ModelForm):
 
     action = forms.ChoiceField(widget=forms.RadioSelect)
-    token = forms.CharField()
+
+    invoice_name = forms.CharField(required=False)
+    invoice_email = forms.EmailField(required=False)
+
+    # token is not required for payment by invoice
+    token = forms.CharField(required=False)
 
     def _action_choices(self, actions):
         result = []
@@ -30,6 +35,11 @@ class CheckoutForm(forms.ModelForm):
             self.initial['action'] = choices[0][0]
         elif CheckoutAction.PAYMENT in actions:
             self.initial['action'] = CheckoutAction.PAYMENT
+        # hide invoice fields if not used
+        if not CheckoutAction.INVOICE in actions:
+            for name in ('invoice_email', 'invoice_name'):
+                self.fields[name].widget = forms.HiddenInput()
+        # hide token field
         self.fields['token'].widget = forms.HiddenInput()
 
 

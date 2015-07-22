@@ -43,6 +43,7 @@ class SalesLedger(models.Model):
     def checkout_actions(self):
         return [
             CheckoutAction.CARD_UPDATE,
+            CheckoutAction.INVOICE,
             CheckoutAction.PAYMENT,
             CheckoutAction.PAYMENT_PLAN,
         ]

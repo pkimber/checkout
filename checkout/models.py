@@ -31,21 +31,8 @@ CURRENCY = 'GBP'
 logger = logging.getLogger(__name__)
 
 
-def as_pennies(total):
-    return int(total * Decimal('100'))
-
-
-def expiry_date_as_str(item):
-    d = item.get('expiry_date', None)
-    return d.strftime('%Y%m%d') if d else ''
-
-
-def default_checkout_state():
-    return CheckoutState.objects.get(slug=CheckoutState.PENDING).pk
-
-
-def log_stripe_error(log, e, message):
-    log.error(
+def _log_stripe_error(e, message):
+    logger.error(
         'StripeError\n'
         '{}\n'
         'http body: {}\n'
@@ -55,6 +42,19 @@ def log_stripe_error(log, e, message):
             e.http_status,
         )
     )
+
+
+def as_pennies(total):
+    return int(total * Decimal('100'))
+
+
+def default_checkout_state():
+    return CheckoutState.objects.get(slug=CheckoutState.PENDING).pk
+
+
+def expiry_date_as_str(item):
+    d = item.get('expiry_date', None)
+    return d.strftime('%Y%m%d') if d else ''
 
 
 class CheckoutError(Exception):
@@ -116,6 +116,7 @@ class CheckoutAction(TimeStampedModel):
 
     CARD_UPDATE = 'card_update'
     CHARGE = 'charge'
+    INVOICE = 'invoice'
     PAYMENT = 'payment'
     PAYMENT_PLAN = 'payment_plan'
 
@@ -130,6 +131,10 @@ class CheckoutAction(TimeStampedModel):
 
     def __str__(self):
         return '{}'.format(self.name)
+
+    @property
+    def invoice(self):
+        return self.slug == self.INVOICE
 
 reversion.register(CheckoutAction)
 
@@ -155,7 +160,7 @@ class CustomerManager(models.Manager):
             )
             return customer.id
         except stripe.StripeError as e:
-            log_stripe_error(logger, e, '_stripe_create - email: {}'.format(email))
+            _log_stripe_error(e, '_stripe_create - email: {}'.format(email))
             raise CheckoutError('Error creating Stripe customer') from e
 
     def _stripe_get_card_expiry(self, customer_id):
@@ -180,7 +185,7 @@ class CustomerManager(models.Manager):
             stripe_customer.card = token
             stripe_customer.save()
         except stripe.StripeError as e:
-            log_stripe_error(logger, e, '_stripe_update - id: {}'.format(customer_id))
+            _log_stripe_error(e, '_stripe_update - id: {}'.format(customer_id))
             raise CheckoutError('Error updating Stripe customer') from e
 
     def init_customer(self, content_object, token):
@@ -259,12 +264,11 @@ class CheckoutManager(models.Manager):
     def audit(self):
         return self.model.objects.all().order_by('-pk')
 
-    def create_checkout(self, action, content_object, customer, user):
+    def create_checkout(self, action, content_object, user):
         """Create a checkout payment request."""
         obj = self.model(
             action=action,
             content_object=content_object,
-            customer=customer,
             description=', '.join(content_object.checkout_description),
         )
         # an anonymous user can create a checkout
@@ -323,7 +327,11 @@ class Checkout(TimeStampedModel):
     """
 
     action = models.ForeignKey(CheckoutAction)
-    customer = models.ForeignKey(Customer)
+    customer = models.ForeignKey(
+        Customer,
+        blank=True,
+        null=True,
+    )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='+',
@@ -389,6 +397,16 @@ class Checkout(TimeStampedModel):
                     e.http_status,
                 )
             )
+            raise CheckoutError(
+                "Card error '{}' when charging card.  Checkout: '{}'".format(
+                    e.code, self.pk,
+                )
+            ) from e
+        except stripe.StripeError as e:
+            _log_stripe_error(e, 'checkout: {} content_object: {}'.format(
+                self.pk,
+                self.content_object.pk
+            ))
             raise CheckoutError(
                 "Card error '{}' when charging card.  Checkout: '{}'".format(
                     e.code, self.pk,

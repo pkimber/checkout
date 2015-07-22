@@ -8,19 +8,19 @@ from django.conf import settings
 class Migration(migrations.Migration):
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('contenttypes', '0002_remove_content_type_name'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
             name='Checkout',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('description', models.TextField()),
-                ('total', models.DecimalField(decimal_places=2, max_digits=8, null=True, blank=True)),
+                ('total', models.DecimalField(max_digits=8, null=True, blank=True, decimal_places=2)),
                 ('object_id', models.PositiveIntegerField()),
             ],
             options={
@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CheckoutAction',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=100)),
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CheckoutState',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=100)),
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Customer',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('name', models.TextField()),
@@ -80,11 +80,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ObjectPaymentPlan',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('object_id', models.PositiveIntegerField()),
-                ('total', models.DecimalField(decimal_places=2, max_digits=8)),
+                ('total', models.DecimalField(max_digits=8, decimal_places=2)),
                 ('deleted', models.BooleanField(default=False)),
                 ('content_type', models.ForeignKey(to='contenttypes.ContentType')),
             ],
@@ -97,15 +97,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ObjectPaymentPlanInstalment',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('count', models.IntegerField()),
                 ('deposit', models.BooleanField(help_text='Is this the initial payment')),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=8)),
+                ('amount', models.DecimalField(max_digits=8, decimal_places=2)),
                 ('due', models.DateField(null=True, blank=True)),
                 ('object_payment_plan', models.ForeignKey(to='checkout.ObjectPaymentPlan')),
-                ('state', models.ForeignKey(null=True, blank=True, to='checkout.CheckoutState')),
+                ('state', models.ForeignKey(null=True, to='checkout.CheckoutState', blank=True)),
             ],
             options={
                 'verbose_name_plural': 'Payments for an object',
@@ -115,7 +115,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PaymentPlan',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('modified', models.DateTimeField(auto_now=True)),
                 ('name', models.TextField()),
@@ -149,17 +149,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='checkout',
             name='customer',
-            field=models.ForeignKey(to='checkout.Customer'),
+            field=models.ForeignKey(null=True, to='checkout.Customer', blank=True),
         ),
         migrations.AddField(
             model_name='checkout',
             name='state',
-            field=models.ForeignKey(null=True, blank=True, to='checkout.CheckoutState'),
+            field=models.ForeignKey(null=True, to='checkout.CheckoutState', blank=True),
         ),
         migrations.AddField(
             model_name='checkout',
             name='user',
-            field=models.ForeignKey(related_name='+', null=True, blank=True, help_text='User who created the checkout request (or blank if the the user is not logged in)', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(null=True, related_name='+', to=settings.AUTH_USER_MODEL, help_text='User who created the checkout request (or blank if the the user is not logged in)', blank=True),
         ),
         migrations.AlterUniqueTogether(
             name='objectpaymentplaninstalment',

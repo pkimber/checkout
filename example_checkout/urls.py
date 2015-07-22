@@ -38,7 +38,10 @@ urlpatterns = patterns(
         view=include('checkout.urls')
         ),
     url(r'^home/user/$',
-        view=RedirectView.as_view(url=reverse_lazy('project.home')),
+        view=RedirectView.as_view(
+            url=reverse_lazy('project.home'),
+            permanent=False
+        ),
         name='project.dash'
         ),
     url(regex=r'^example/refresh/card/expiry/dates/$',
