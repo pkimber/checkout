@@ -155,7 +155,8 @@ class CheckoutMixin(object):
             action, self.object, customer, self.request.user
         )
         try:
-            checkout.process()
+            logger.error('testing, testing')
+            checkout.charge_user(self.request.user)
             with transaction.atomic():
                 #self.object = form.save()
                 checkout.success()

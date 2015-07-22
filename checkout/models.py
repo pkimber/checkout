@@ -271,8 +271,10 @@ class CheckoutManager(models.Manager):
         obj.save()
         return obj
 
-    def charge(self, content_object, user):
+    def charge(self, content_object, current_user):
         """Collect some money from a customer.
+
+        You must be a member of staff to use this method.
 
         We should only attempt to collect money if the customer has already
         entered their card details.
@@ -295,10 +297,10 @@ class CheckoutManager(models.Manager):
             action,
             content_object,
             customer,
-            user
+            current_user
         )
         try:
-            checkout.process()
+            checkout.charge(current_user)
             with transaction.atomic():
                 checkout.success()
         except CheckoutError:
@@ -345,6 +347,13 @@ class Checkout(TimeStampedModel):
         return '{}'.format(self.customer.email)
 
     def _charge(self):
+        """Charge the card."""
+        if self.action.payment:
+            self.total = self.content_object.checkout_total
+            self.save()
+            self._charge_stripe()
+
+    def _charge_stripe(self):
         """Create the charge on stripe's servers."""
         stripe.api_key = settings.STRIPE_SECRET_KEY
         try:
@@ -378,6 +387,45 @@ class Checkout(TimeStampedModel):
     def _success_or_fail(self, state):
         self.state = state
         self.save()
+
+    def charge(self, current_user):
+        """Charge the user's card.
+
+        Must be a member of staff to use this method.  To take payments for the
+        current user, use the ``charge_user`` method.
+
+        """
+        if current_user.is_staff:
+            self._charge()
+        else:
+            message = (
+                'Cannot process - payments can only '
+                'be taken by a member of staff.'
+            )
+            logger.error("{}.  Customer: '{}', Current: '{}'".format(
+                message, self.customer.email, current_user.email
+            ))
+            raise CheckoutError(message)
+
+    def charge_user(self, current_user):
+        """Charge the card of the current user.
+
+        Use this method when the logged in user is performing the transaction.
+        To take money from another user's card, you must be a member of staff
+        and us the ``charge`` method.
+
+        """
+        if self.customer.email == current_user.email:
+            self._charge()
+        else:
+            message = (
+                'Cannot process - payments can only '
+                'be taken for the current user.'
+            )
+            logger.error("{}.  Customer: '{}', Current: '{}'".format(
+                message, self.customer.email, current_user.email
+            ))
+            raise CheckoutError(message)
 
     @property
     def content_object_url(self):
@@ -421,16 +469,10 @@ class Checkout(TimeStampedModel):
                 message,
             )
         else:
-            logging.error(
+            logger.error(
                 "Cannot send email notification of checkout transaction.  "
                 "No email addresses set-up in 'enquiry.models.Notify'"
             )
-
-    def process(self):
-        if self.action.payment:
-            self.total = self.content_object.checkout_total
-            self.save()
-            self._charge()
 
     def success(self):
         """Checkout successful - so update and notify admin."""

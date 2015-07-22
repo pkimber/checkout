@@ -32,7 +32,7 @@
         };
         if (is_payment) {
             options.amount = {{ total }};
-            currency = "{{ currency }}";
+            options.currency = "{{ currency }}";
         }
         if (action) {
             // Open Checkout with further options
