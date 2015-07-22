@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+import datetime
 import logging
 
 from datetime import date
@@ -562,12 +563,18 @@ class ObjectPaymentPlanManager(models.Manager):
     @property
     def report_card_expiry_dates(self):
         result = []
+        empty_date = date(datetime.MINYEAR, 1, 1)
         for object_payment_plan in self.outstanding_payment_plans:
-            customer = Customer.objects.get(
-                email=object_payment_plan.content_object.checkout_email
-            )
+            expiry_date = empty_date
+            try:
+                customer = Customer.objects.get(
+                    email=object_payment_plan.content_object.checkout_email
+                )
+                expiry_date = customer.expiry_date or empty_date
+            except Customer.DoesNotExist:
+                pass
             result.append(dict(
-                expiry_date=customer.expiry_date,
+                expiry_date=expiry_date,
                 object_payment_plan=object_payment_plan,
             ))
         return sorted(

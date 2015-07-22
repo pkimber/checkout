@@ -12,7 +12,10 @@ from checkout.models import (
     CheckoutState,
     ObjectPaymentPlan
 )
-from checkout.tests.factories import PaymentPlanFactory
+from checkout.tests.factories import (
+    CustomerFactory,
+    PaymentPlanFactory,
+)
 from .factories import (
     ContactFactory,
     ObjectPaymentPlanFactory,
@@ -120,3 +123,11 @@ def test_outstanding_payment_plans_exclude_success():
     ObjectPaymentPlanInstalmentFactory()
     ObjectPaymentPlanInstalmentFactory(state=CheckoutState.objects.success)
     assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
+
+
+@pytest.mark.django_db
+def test_report_card_expiry_dates():
+    ObjectPaymentPlanInstalmentFactory()
+    obj = ObjectPaymentPlanInstalmentFactory()
+    CustomerFactory(email=obj.object_payment_plan.content_object.checkout_email)
+    ObjectPaymentPlan.objects.report_card_expiry_dates
