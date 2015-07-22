@@ -265,9 +265,11 @@ class CheckoutManager(models.Manager):
             action=action,
             content_object=content_object,
             customer=customer,
-            user=user,
             description=', '.join(content_object.checkout_description),
         )
+        # an anonymous user can create a checkout
+        if user.is_authenticated():
+            obj.user = user
         obj.save()
         return obj
 
@@ -322,7 +324,16 @@ class Checkout(TimeStampedModel):
 
     action = models.ForeignKey(CheckoutAction)
     customer = models.ForeignKey(Customer)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='+')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='+',
+        blank=True,
+        null=True,
+        help_text=(
+            'User who created the checkout request '
+            '(or blank if the the user is not logged in)'
+        )
+    )
     state = models.ForeignKey(
         CheckoutState,
         default=default_checkout_state
@@ -402,8 +413,8 @@ class Checkout(TimeStampedModel):
                 'Cannot process - payments can only '
                 'be taken by a member of staff.'
             )
-            logger.error("{}.  Customer: '{}', Current: '{}'".format(
-                message, self.customer.email, current_user.email
+            logger.error("{}.  Current: '{}', Customer: '{}'".format(
+                message, current_user.email, self.customer.email
             ))
             raise CheckoutError(message)
 
@@ -411,19 +422,21 @@ class Checkout(TimeStampedModel):
         """Charge the card of the current user.
 
         Use this method when the logged in user is performing the transaction.
+
         To take money from another user's card, you must be a member of staff
-        and us the ``charge`` method.
+        and use the ``charge`` method.
 
         """
-        if self.customer.email == current_user.email:
+        anonymous = not current_user.is_authenticated()
+        if anonymous or self.customer.email == current_user.email:
             self._charge()
         else:
             message = (
-                'Cannot process - payments can only '
-                'be taken for the current user.'
+                'Cannot process - payments can only be taken '
+                'for an anonymous user or the current user.'
             )
-            logger.error("{}.  Customer: '{}', Current: '{}'".format(
-                message, self.customer.email, current_user.email
+            logger.error("{}.  Current: '{}', Customer: '{}'".format(
+                message, current_user.email, self.customer.email
             ))
             raise CheckoutError(message)
 
