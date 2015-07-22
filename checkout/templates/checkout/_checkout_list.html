@@ -22,15 +22,15 @@
         <td>
           {% if o.content_object_url %}
             <a href="{{ o.content_object_url }}">
-              {{ o.customer.name }}
+              {{ o.content_object.checkout_name }}
             </a>
           {% else %}
             {{ o.name }}
           {% endif %}
           <br />
           <small>
-            <a href="mailto:{{ o.customer.email }}">
-              {{ o.customer.email }}
+            <a href="mailto:{{ o.content_object.checkout_email }}">
+              {{ o.content_object.checkout_email }}
             </a>
           </small>
         </td>

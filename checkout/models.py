@@ -363,7 +363,7 @@ class Checkout(TimeStampedModel):
         verbose_name_plural = 'Checkouts'
 
     def __str__(self):
-        return '{}'.format(self.customer.email)
+        return '{}'.format(self.content_object.checkout_email)
 
     def _charge(self):
         """Charge the card."""
@@ -481,13 +481,13 @@ class Checkout(TimeStampedModel):
             caption = self.action.name
             subject = '{} from {}'.format(
                 caption.capitalize(),
-                self.customer.name,
+                self.content_object.checkout_name,
             )
             message = '{} - {} from {}, {}:'.format(
                 self.created.strftime('%d/%m/%Y %H:%M'),
                 caption,
-                self.customer.name,
-                self.customer.email,
+                self.content_object.checkout_name,
+                self.content_object.checkout_email,
             )
             message = message + '\n\n{}\n\n{}'.format(
                 self.description,
