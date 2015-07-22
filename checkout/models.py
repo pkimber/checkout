@@ -1,5 +1,4 @@
 # -*- encoding: utf-8 -*-
-import datetime
 import logging
 
 from datetime import date
@@ -34,6 +33,11 @@ logger = logging.getLogger(__name__)
 
 def as_pennies(total):
     return int(total * Decimal('100'))
+
+
+def expiry_date_as_str(item):
+    d = item.get('expiry_date', None)
+    return d.strftime('%Y%m%d') if d else ''
 
 
 def default_checkout_state():
@@ -563,24 +567,20 @@ class ObjectPaymentPlanManager(models.Manager):
     @property
     def report_card_expiry_dates(self):
         result = []
-        empty_date = date(datetime.MINYEAR, 1, 1)
         for object_payment_plan in self.outstanding_payment_plans:
-            expiry_date = empty_date
+            expiry_date = None
             try:
                 customer = Customer.objects.get(
                     email=object_payment_plan.content_object.checkout_email
                 )
-                expiry_date = customer.expiry_date or empty_date
+                expiry_date = customer.expiry_date
             except Customer.DoesNotExist:
                 pass
             result.append(dict(
                 expiry_date=expiry_date,
                 object_payment_plan=object_payment_plan,
             ))
-        return sorted(
-            result,
-            key=lambda item: item.get('expiry_date')
-        )
+        return sorted(result, key=expiry_date_as_str)
 
     def refresh_card_expiry_dates(self):
         """Refresh the card expiry dates for outstanding payment plans."""
