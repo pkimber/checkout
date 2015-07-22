@@ -211,15 +211,18 @@ class CustomerManager(models.Manager):
         return obj
 
     def update_card_expiry(self, email):
-        obj = self._get_customer(email)
-        year, month = self._stripe_get_card_expiry(obj.customer_id)
-        if year and month:
-            # last day of the month
-            obj.expiry_date = date(year, month, 1) + relativedelta(
-                months=+1, day=1, days=-1
-            )
-            # save the details
-            obj.save()
+        try:
+            obj = self._get_customer(email)
+            year, month = self._stripe_get_card_expiry(obj.customer_id)
+            if year and month:
+                # last day of the month
+                obj.expiry_date = date(year, month, 1) + relativedelta(
+                    months=+1, day=1, days=-1
+                )
+                # save the details
+                obj.save()
+        except Customer.DoesNotExist:
+            pass
 
 
 class Customer(TimeStampedModel):
@@ -566,19 +569,22 @@ class ObjectPaymentPlanManager(models.Manager):
 
     @property
     def report_card_expiry_dates(self):
+        emails = []
         result = []
-        for object_payment_plan in self.outstanding_payment_plans:
-            expiry_date = None
-            try:
-                customer = Customer.objects.get(
-                    email=object_payment_plan.content_object.checkout_email
-                )
-                expiry_date = customer.expiry_date
-            except Customer.DoesNotExist:
-                pass
+        payment_plans = self.outstanding_payment_plans
+        for item in payment_plans:
+            emails.append(item.content_object.checkout_email)
+        # get the expiry date for all the customers (as a 'dict')
+        customers = dict(Customer.objects.filter(
+            email__in=emails
+        ).values_list(
+            'email', 'expiry_date'
+        ))
+        for item in payment_plans:
+            expiry_date = customers.get(item.content_object.checkout_email)
             result.append(dict(
                 expiry_date=expiry_date,
-                object_payment_plan=object_payment_plan,
+                object_payment_plan=item,
             ))
         return sorted(result, key=expiry_date_as_str)
 
