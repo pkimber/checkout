@@ -7,6 +7,7 @@ from django.views.generic import (
     FormView,
     ListView,
     UpdateView,
+    RedirectView,
 )
 
 from braces.views import LoginRequiredMixin
@@ -16,7 +17,10 @@ from checkout.models import (
     Checkout,
     ObjectPaymentPlan,
 )
-from checkout.views import CheckoutMixin
+from checkout.views import (
+    CheckoutMixin,
+    CONTENT_OBJECT_PK,
+)
 from .forms import (
     EmptyForm,
     SalesLedgerCheckoutForm,
@@ -68,3 +72,14 @@ class SalesLedgerCheckoutUpdateView(CheckoutMixin, BaseMixin, UpdateView):
     model = SalesLedger
     form_class = SalesLedgerCheckoutForm
     template_name = 'example/checkout.html'
+
+
+class SalesLedgerSessionRedirectView(RedirectView):
+    """Set session variable so permission checks pass in checkout."""
+
+    permanent = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        pk = kwargs['pk']
+        self.request.session[CONTENT_OBJECT_PK] = pk
+        return reverse('example.sales.ledger.checkout', args=[pk])

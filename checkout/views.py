@@ -43,23 +43,25 @@ from .models import (
 )
 
 
-CHECKOUT_PK = 'checkout_pk'
+CONTENT_OBJECT_PK = 'content_object_pk'
 logger = logging.getLogger(__name__)
 
 
-def _check_perm(request, payment):
+def _check_perm(request, content_object):
     """Check the session variable to make sure it was set."""
-    payment_pk = request.session.get(CHECKOUT_PK, None)
-    if payment_pk:
-        if not payment_pk == payment.pk:
+    pk = request.session.get(CONTENT_OBJECT_PK, None)
+    if pk:
+        pk = int(pk)
+        if not pk == content_object.pk:
             logger.critical(
-                'payment check: invalid {} != {}'.format(
-                    payment_pk, payment.pk,
-            ))
-            raise PermissionDenied('Valid payment check fail.')
+                'content object check: invalid: {} != {}'.format(
+                    pk, content_object.pk,
+                )
+            )
+            raise PermissionDenied('content check failed')
     else:
-        logger.critical('payment check: invalid')
-        raise PermissionDenied('Valid payment check failed.')
+        logger.critical('content object check: invalid')
+        raise PermissionDenied('content check failed')
 
 
 class CheckoutAuditListView(
@@ -106,15 +108,11 @@ class CheckoutMixin(object):
             )
         return json.dumps(result)
 
-    #def _checkout_fail(self):
-    #    I don't know if we need this method
-    #    return self.object.checkout_fail()
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # TODO PJK Do I need to re-instate this?
-        # _check_perm(self.request, self.object)
-        # self.object.check_can_pay
+        _check_perm(self.request, self.object)
+        if not self.object.checkout_can_charge:
+            raise CheckoutError('Cannot charge: {}'.format(str(self.object)))
         context.update(dict(
             action_data=self._action_data(),
             currency=CURRENCY,
@@ -129,8 +127,6 @@ class CheckoutMixin(object):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update(dict(
-            #actions=[CheckoutAction.PAYMENT, CheckoutAction.PAYMENT_PLAN],
-            #actions=[CheckoutAction.PAYMENT_PLAN],
             actions=self.object.checkout_actions,
         ))
         return kwargs

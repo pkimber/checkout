@@ -12,6 +12,7 @@ from .views import (
     HomeView,
     SalesLedgerChargeUpdateView,
     SalesLedgerCheckoutUpdateView,
+    SalesLedgerSessionRedirectView,
 )
 
 admin.autodiscover()
@@ -51,6 +52,10 @@ urlpatterns = patterns(
     url(regex=r'^sales/ledger/(?P<pk>\d+)/checkout/$',
         view=SalesLedgerCheckoutUpdateView.as_view(),
         name='example.sales.ledger.checkout'
+        ),
+    url(regex=r'^sales/ledger/(?P<pk>\d+)/session/redirect/$',
+        view=SalesLedgerSessionRedirectView.as_view(),
+        name='example.sales.ledger.session.redirect'
         ),
 )
 

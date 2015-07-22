@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-from checkout.views import CHECKOUT_PK
+from checkout.views import CONTENT_OBJECT_PK
 from example_checkout.tests.factories import SalesLedgerFactory
 from finance.tests.factories import VatSettingsFactory
 from login.tests.factories import TEST_PASSWORD
@@ -57,7 +57,7 @@ class TestView(TestCase):
 
     def _set_session_payment_pk(self, pk):
         session = self.client.session
-        session[CHECKOUT_PK] = pk
+        session[CONTENT_OBJECT_PK] = pk
         session.save()
 
     #def test_pay_later(self):

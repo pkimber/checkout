@@ -47,7 +47,7 @@
                 <td>{{ p.product.price }}</td>
                 <td>{{ p.quantity }}</td>
                 <td>
-                  <a href="{% url 'example.sales.ledger.checkout' p.pk %}">
+                  <a href="{% url 'example.sales.ledger.session.redirect' p.pk %}">
                     <i class="fa fa-shopping-cart"></i>
                     Checkout
                   </a>
