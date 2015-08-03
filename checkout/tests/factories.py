@@ -3,6 +3,7 @@ import factory
 
 from checkout.models import (
     Checkout,
+    CheckoutInvoice,
     Customer,
     PaymentPlan,
 )
@@ -24,6 +25,14 @@ class CheckoutFactory(factory.django.DjangoModelFactory):
         model = Checkout
 
     customer = factory.SubFactory(CustomerFactory)
+
+
+class CheckoutInvoiceFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = CheckoutInvoice
+
+    checkout = factory.SubFactory(CheckoutFactory)
 
 
 class PaymentPlanFactory(factory.django.DjangoModelFactory):

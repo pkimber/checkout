@@ -112,6 +112,17 @@ class CheckoutState(TimeStampedModel):
 reversion.register(CheckoutState)
 
 
+class CheckoutActionManager(models.Manager):
+
+    @property
+    def charge(self):
+        return self.model.objects.get(slug=self.model.CHARGE)
+
+    @property
+    def invoice(self):
+        return self.model.objects.get(slug=self.model.INVOICE)
+
+
 class CheckoutAction(TimeStampedModel):
 
     CARD_UPDATE = 'card_update'
@@ -123,6 +134,7 @@ class CheckoutAction(TimeStampedModel):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     payment = models.BooleanField()
+    objects = CheckoutActionManager()
 
     class Meta:
         ordering = ('name',)
@@ -298,7 +310,7 @@ class CheckoutManager(models.Manager):
                     content_object.checkout_email
                 )
             ) from e
-        action = CheckoutAction.objects.get(slug=CheckoutAction.CHARGE)
+        action = CheckoutAction.objects.charge
         checkout = self.create_checkout(
             action,
             content_object,
