@@ -302,9 +302,10 @@ class CheckoutManager(models.Manager):
         checkout = self.create_checkout(
             action,
             content_object,
-            customer,
             current_user
         )
+        checkout.customer = customer
+        checkout.save()
         try:
             checkout.charge(current_user)
             with transaction.atomic():
