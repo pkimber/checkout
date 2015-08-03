@@ -12,8 +12,16 @@ class CheckoutForm(forms.ModelForm):
 
     action = forms.ChoiceField(widget=forms.RadioSelect)
 
-    invoice_name = forms.CharField(required=False)
+    contact_name = forms.CharField(required=False)
     invoice_email = forms.EmailField(required=False)
+    company_name = forms.CharField(max_length=100)
+    address_1 = forms.CharField(label='Address', required=True)
+    address_2 = forms.CharField(label='', required=True)
+    address_3 = forms.CharField(label='', required=True)
+    town = forms.CharField(max_length=100, required=True)
+    county = forms.CharField(max_length=100, required=True)
+    postcode = forms.CharField(max_length=20, required=True)
+    country = forms.CharField(max_length=100, required=True)
 
     # token is not required for payment by invoice
     token = forms.CharField(required=False)
@@ -37,7 +45,12 @@ class CheckoutForm(forms.ModelForm):
             self.initial['action'] = CheckoutAction.PAYMENT
         # hide invoice fields if not used
         if not CheckoutAction.INVOICE in actions:
-            for name in ('invoice_email', 'invoice_name'):
+            for name in (
+                'invoice_email',
+                'company_name',
+                'address_1',
+                'address_2',
+                ):
                 self.fields[name].widget = forms.HiddenInput()
         # hide token field
         self.fields['token'].widget = forms.HiddenInput()

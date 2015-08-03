@@ -12,14 +12,22 @@
             var action = $('#id_checkout_form input[type=radio]:checked').val();
             var display = (action === 'invoice');
             // is the invoice section already visible?
-            var visible = $('#id_invoice_name').is(":visible");
+            var visible = $('#id_contact_name').is(":visible");
             if (display && visible) {
                 // pass
             } else if (!display && !visible) {
                 // pass
             } else {
-                $('#id_invoice_name').parent().toggle(display);
+                $('#id_contact_name').parent().toggle(display);
                 $('#id_invoice_email').parent().toggle(display);
+                $('#id_company_name').parent().toggle(display);
+                $('#id_address_1').parent().toggle(display);
+                $('#id_address_2').parent().toggle(display);
+                $('#id_address_3').parent().toggle(display);
+                $('#id_town').parent().toggle(display);
+                $('#id_county').parent().toggle(display);
+                $('#id_postcode').parent().toggle(display);
+                $('#id_country').parent().toggle(display);
             }
         }
     }
