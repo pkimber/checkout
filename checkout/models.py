@@ -476,6 +476,26 @@ class Checkout(TimeStampedModel):
         """Did the checkout request fail?"""
         return self.state == CheckoutState.objects.fail
 
+    @property
+    def invoice_data(self):
+        try:
+            data = self.checkoutinvoice
+            return filter(None, (
+                data.company_name,
+                data.address_1,
+                data.address_2,
+                data.address_3,
+                data.town,
+                data.county,
+                data.postcode,
+                data.country,
+                data.contact_name,
+                data.email,
+                data.phone,
+            ))
+        except CheckoutInvoice.DoesNotExist:
+            return []
+
     def notify(self, request):
         email_addresses = [n.email for n in Notify.objects.all()]
         if email_addresses:
@@ -512,6 +532,49 @@ class Checkout(TimeStampedModel):
         return self.content_object.checkout_success
 
 reversion.register(Checkout)
+
+
+class CheckoutInvoiceManager(models.Manager):
+
+    def create_checkout_invoice(self, checkout, **kwargs):
+        obj = self.model(checkout=checkout, **kwargs)
+        obj.save()
+        return obj
+
+
+class CheckoutInvoice(TimeStampedModel):
+    """If a user decides to pay by invoice, there are the details.
+
+    Links with the 'CheckoutForm' in ``checkout/forms.py``.  Probably easier to
+    put validation in the form if required.
+
+    """
+
+    checkout = models.OneToOneField(Checkout)
+    # company
+    company_name = models.CharField(max_length=100, blank=True)
+    address_1 = models.CharField('Address', max_length=100, blank=True)
+    address_2 = models.CharField('', max_length=100, blank=True)
+    address_3 = models.CharField('', max_length=100, blank=True)
+    town = models.CharField(max_length=100, blank=True)
+    county = models.CharField(max_length=100, blank=True)
+    postcode = models.CharField(max_length=20, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    # contact
+    contact_name = models.CharField(max_length=100, blank=True)
+    email = models.EmailField(blank=False)
+    phone = models.CharField(max_length=50, blank=True)
+    objects = CheckoutInvoiceManager()
+
+    class Meta:
+        ordering = ('email',)
+        verbose_name = 'Checkout Invoice'
+        verbose_name_plural = 'Checkout Invoices'
+
+    def __str__(self):
+        return '{}'.format(self.email)
+
+reversion.register(CheckoutInvoice)
 
 
 class PaymentPlanManager(models.Manager):

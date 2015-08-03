@@ -12,16 +12,18 @@ class CheckoutForm(forms.ModelForm):
 
     action = forms.ChoiceField(widget=forms.RadioSelect)
 
+    company_name = forms.CharField(required=False)
+    address_1 = forms.CharField(label='Address', required=False)
+    address_2 = forms.CharField(label='', required=False)
+    address_3 = forms.CharField(label='', required=False)
+    town = forms.CharField(required=False)
+    county = forms.CharField(required=False)
+    postcode = forms.CharField(required=False)
+    country = forms.CharField(required=False)
+    # contact
     contact_name = forms.CharField(required=False)
-    invoice_email = forms.EmailField(required=False)
-    company_name = forms.CharField(max_length=100)
-    address_1 = forms.CharField(label='Address', required=True)
-    address_2 = forms.CharField(label='', required=True)
-    address_3 = forms.CharField(label='', required=True)
-    town = forms.CharField(max_length=100, required=True)
-    county = forms.CharField(max_length=100, required=True)
-    postcode = forms.CharField(max_length=20, required=True)
-    country = forms.CharField(max_length=100, required=True)
+    email = forms.EmailField(required=False)
+    phone = forms.CharField(required=False)
 
     # token is not required for payment by invoice
     token = forms.CharField(required=False)
@@ -46,14 +48,36 @@ class CheckoutForm(forms.ModelForm):
         # hide invoice fields if not used
         if not CheckoutAction.INVOICE in actions:
             for name in (
-                'invoice_email',
                 'company_name',
                 'address_1',
                 'address_2',
+                'address_3',
+                'town',
+                'county',
+                'postcode',
+                'country',
+                'contact_name',
+                'email',
+                'phone',
                 ):
                 self.fields[name].widget = forms.HiddenInput()
         # hide token field
         self.fields['token'].widget = forms.HiddenInput()
+
+    def invoice_data(self):
+        return dict(
+            company_name=self.cleaned_data['company_name'],
+            address_1=self.cleaned_data['address_1'],
+            address_2=self.cleaned_data['address_2'],
+            address_3=self.cleaned_data['address_3'],
+            town=self.cleaned_data['town'],
+            county=self.cleaned_data['county'],
+            postcode=self.cleaned_data['postcode'],
+            country=self.cleaned_data['country'],
+            contact_name=self.cleaned_data['contact_name'],
+            email=self.cleaned_data['email'],
+            phone=self.cleaned_data['phone'],
+        )
 
 
 class ObjectPaymentPlanInstalmentEmptyForm(forms.ModelForm):

@@ -48,6 +48,8 @@
         </td>
         <td>
           {{ o.action.name }}
+          <br />
+          <small>{{ o.invoice_data|join:", " }}</small>
         </td>
         <td>
           {% if o.failed %}

@@ -18,8 +18,6 @@
             } else if (!display && !visible) {
                 // pass
             } else {
-                $('#id_contact_name').parent().toggle(display);
-                $('#id_invoice_email').parent().toggle(display);
                 $('#id_company_name').parent().toggle(display);
                 $('#id_address_1').parent().toggle(display);
                 $('#id_address_2').parent().toggle(display);
@@ -28,6 +26,9 @@
                 $('#id_county').parent().toggle(display);
                 $('#id_postcode').parent().toggle(display);
                 $('#id_country').parent().toggle(display);
+                $('#id_contact_name').parent().toggle(display);
+                $('#id_email').parent().toggle(display);
+                $('#id_phone').parent().toggle(display);
             }
         }
     }

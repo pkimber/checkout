@@ -34,6 +34,7 @@ from .models import (
     Checkout,
     CheckoutAction,
     CheckoutError,
+    CheckoutInvoice,
     ObjectPaymentPlan,
     ObjectPaymentPlanInstalment,
     CURRENCY,
@@ -107,10 +108,9 @@ class CheckoutMixin(object):
             )
         return json.dumps(result)
 
-    def _form_valid_invoice(self, form):
-        #import ipdb
-        #ipdb.set_trace()
-        pass
+    def _form_valid_invoice(self, checkout, form):
+        data = form.invoice_data()
+        CheckoutInvoice.objects.create_checkout_invoice(checkout, **data)
 
     def _form_valid_stripe(self, checkout, token):
         customer = Customer.objects.init_customer(self.object, token)
@@ -139,10 +139,10 @@ class CheckoutMixin(object):
         kwargs.update(dict(actions=self.object.checkout_actions))
         return kwargs
 
-    #def form_invalid(self, form):
-    #    import ipdb
-    #    ipdb.set_trace()
-    #    print(form)
+    def form_invalid(self, form):
+        import ipdb
+        ipdb.set_trace()
+        print(form)
 
     def form_valid(self, form):
         """Process the payment.
@@ -158,7 +158,7 @@ class CheckoutMixin(object):
             action, self.object, self.request.user
         )
         if action.invoice:
-            self._form_valid_invoice(form)
+            self._form_valid_invoice(checkout, form)
         else:
             self._form_valid_stripe(checkout, token)
         try:
