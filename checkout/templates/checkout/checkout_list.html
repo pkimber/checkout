@@ -20,11 +20,7 @@
     <div class="pure-u-1">
       <div class="pure-menu pure-menu-horizontal">
         <ul class="pure-menu-list">
-          <li class="pure-menu-item">
-            <a href="{% url 'project.settings' %}" class="pure-menu-link">
-              <i class="fa fa-reply"></i>
-            </a>
-          </li>
+          {% include 'base/_settings.html' %}
           {% include 'base/_paginate.html' %}
           {% include 'checkout/_checkout_menu.html' %}
         </ul>

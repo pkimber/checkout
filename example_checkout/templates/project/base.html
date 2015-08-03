@@ -13,5 +13,17 @@
   Example App
 {% endblock sub_heading %}
 
+{% block menu %}
+  {% if user.is_staff %}
+    <li class="pure-menu-item{% if 'settings' in path %} pure-menu-selected{% endif %}">
+      <a href="{% url 'project.settings' %}" class="pure-menu-link">
+        <i class="fa fa-cog"></i>
+        Settings
+      </a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock menu %}
+
 {% block footer %}
 {% endblock footer %}

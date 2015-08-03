@@ -10,6 +10,7 @@ from django.views.generic import RedirectView
 from .views import (
     ExampleRefreshExpiryDatesFormView,
     HomeView,
+    SettingsView,
     SalesLedgerChargeUpdateView,
     SalesLedgerCheckoutUpdateView,
     SalesLedgerSessionRedirectView,
@@ -24,8 +25,8 @@ urlpatterns = patterns(
         view=HomeView.as_view(),
         name='project.home'
         ),
-    url(regex=r'^$',
-        view=HomeView.as_view(),
+    url(regex=r'^settings/$',
+        view=SettingsView.as_view(),
         name='project.settings'
         ),
     url(regex=r'^',

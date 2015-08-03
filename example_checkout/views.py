@@ -8,6 +8,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
     RedirectView,
+    TemplateView,
 )
 
 from braces.views import LoginRequiredMixin
@@ -83,3 +84,8 @@ class SalesLedgerSessionRedirectView(RedirectView):
         pk = kwargs['pk']
         self.request.session[CONTENT_OBJECT_PK] = pk
         return reverse('example.sales.ledger.checkout', args=[pk])
+
+
+class SettingsView(BaseMixin, TemplateView):
+
+    template_name = 'example/settings.html'
