@@ -95,6 +95,13 @@ class CheckoutListView(
 
 
 class CheckoutMixin(object):
+    """Checkout.
+
+    Use with an ``UpdateView`` e.g::
+
+      class ShopCheckoutUpdateView(CheckoutMixin, BaseMixin, UpdateView):
+
+    """
 
     def _action_data(self):
         """the action data for the javascript on the page."""
@@ -139,10 +146,10 @@ class CheckoutMixin(object):
         kwargs.update(dict(actions=self.object.checkout_actions))
         return kwargs
 
-    def form_invalid(self, form):
-        import ipdb
-        ipdb.set_trace()
-        print(form)
+    #def form_invalid(self, form):
+    #    import ipdb
+    #    ipdb.set_trace()
+    #    print(form)
 
     def form_valid(self, form):
         """Process the payment.
