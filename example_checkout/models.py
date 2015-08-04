@@ -42,7 +42,7 @@ class SalesLedger(models.Model):
     @property
     def checkout_actions(self):
         return [
-            CheckoutAction.CARD_UPDATE,
+            CheckoutAction.CARD_REFRESH,
             CheckoutAction.INVOICE,
             CheckoutAction.PAYMENT,
             CheckoutAction.PAYMENT_PLAN,

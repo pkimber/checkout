@@ -146,11 +146,11 @@ class CheckoutMixin(object):
         kwargs.update(dict(actions=self.object.checkout_actions))
         return kwargs
 
-    def form_invalid(self, form):
-        #import ipdb
-        #ipdb.set_trace()
-        #print(form.errors)
-        logger.error(form.errors)
+    #def form_invalid(self, form):
+    #    import ipdb
+    #    ipdb.set_trace()
+    #    print(form.errors)
+    #    logger.error(form.errors)
 
     def form_valid(self, form):
         """Process the payment.
@@ -158,6 +158,8 @@ class CheckoutMixin(object):
         Note: We do NOT update 'self.object'
 
         """
+        #import ipdb
+        #ipdb.set_trace()
         self.object = form.save(commit=False)
         token = form.cleaned_data['token']
         slug = form.cleaned_data['action']

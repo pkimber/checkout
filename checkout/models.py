@@ -125,7 +125,7 @@ class CheckoutActionManager(models.Manager):
 
 class CheckoutAction(TimeStampedModel):
 
-    CARD_UPDATE = 'card_update'
+    CARD_REFRESH = 'card_refresh'
     CHARGE = 'charge'
     INVOICE = 'invoice'
     PAYMENT = 'payment'

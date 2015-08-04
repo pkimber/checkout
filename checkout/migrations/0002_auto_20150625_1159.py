@@ -30,11 +30,11 @@ def default_state(apps, schema_editor):
 
     """
     model = apps.get_model('checkout', 'CheckoutAction')
+    _init_state_action(model, 'Card Refresh', 'card_refresh', False)
     _init_state_action(model, 'Charge', 'charge', True)
     _init_state_action(model, 'Invoice', 'invoice', False)
     _init_state_action(model, 'Payment', 'payment', True)
     _init_state_action(model, 'Setup Payment Plan', 'payment_plan', False)
-    _init_state_action(model, 'Update Card', 'card_update', False)
 
     model = apps.get_model('checkout', 'CheckoutState')
     _init_state(model, 'Fail', 'fail')

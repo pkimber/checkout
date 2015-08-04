@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.core.urlresolvers import reverse
 
 from checkout.models import (
+    Checkout,
     CheckoutAction,
     CheckoutInvoice,
 )
@@ -28,7 +29,23 @@ def test_get(client):
 
 
 @pytest.mark.django_db
-def test_post(client):
+def test_post_card_refresh(client, mocker):
+    mocker.patch('stripe.Customer.create')
+    obj = SalesLedgerFactory()
+    _set_session(client, obj.pk)
+    url = reverse('example.sales.ledger.checkout', args=[obj.pk])
+    data = {
+        'action': CheckoutAction.CARD_REFRESH,
+    }
+    response = client.post(url, data)
+    assert 302 == response.status_code
+    assert 1 == Checkout.objects.count()
+    checkout = Checkout.objects.first()
+    assert CheckoutAction.CARD_REFRESH == checkout.action.slug
+
+
+@pytest.mark.django_db
+def test_post_invoice(client):
     obj = SalesLedgerFactory()
     _set_session(client, obj.pk)
     url = reverse('example.sales.ledger.checkout', args=[obj.pk])
@@ -38,5 +55,8 @@ def test_post(client):
     }
     response = client.post(url, data)
     assert 302 == response.status_code
-    invoice = CheckoutInvoice.objects.get(email='test@pkimber.net')
-    assert 'invoice' == invoice.checkout.action.slug
+    assert 1 == Checkout.objects.count()
+    checkout = Checkout.objects.first()
+    assert CheckoutAction.INVOICE == checkout.action.slug
+    invoice = checkout.checkoutinvoice
+    assert 'test@pkimber.net' == invoice.email
