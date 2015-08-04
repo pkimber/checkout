@@ -117,6 +117,7 @@ class CheckoutMixin(object):
 
     def _form_valid_invoice(self, checkout, form):
         data = form.invoice_data()
+        checkout.invoice()
         CheckoutInvoice.objects.create_checkout_invoice(checkout, **data)
 
     def _form_valid_stripe(self, checkout, token):
@@ -158,28 +159,31 @@ class CheckoutMixin(object):
         Note: We do NOT update 'self.object'
 
         """
-        #import ipdb
-        #ipdb.set_trace()
         self.object = form.save(commit=False)
         token = form.cleaned_data['token']
         slug = form.cleaned_data['action']
         action = CheckoutAction.objects.get(slug=slug)
-        checkout = Checkout.objects.create_checkout(
-            action, self.object, self.request.user
-        )
-        if action.invoice:
-            self._form_valid_invoice(checkout, form)
-        else:
-            self._form_valid_stripe(checkout, token)
+        checkout = None
         try:
             with transaction.atomic():
+                checkout = Checkout.objects.create_checkout(
+                    action, self.object, self.request.user
+                )
+            # do stripe stuff outside of a transaction so we have some chance
+            # of diagnosing progress if an exception is thrown.
+            if not action.invoice:
+                self._form_valid_stripe(checkout, token)
+            with transaction.atomic():
+                if action.invoice:
+                    self._form_valid_invoice(checkout, form)
                 checkout.success()
                 checkout.notify(self.request)
             url = self.object.checkout_success_url
             process_mail.delay()
         except CheckoutError:
-            with transaction.atomic():
-                checkout.fail()
+            if checkout:
+                with transaction.atomic():
+                    checkout.fail()
             url = self.object.checkout_fail_url
         return HttpResponseRedirect(url)
 

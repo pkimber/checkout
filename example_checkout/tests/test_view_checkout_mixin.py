@@ -42,6 +42,7 @@ def test_post_card_refresh(client, mocker):
     assert 1 == Checkout.objects.count()
     checkout = Checkout.objects.first()
     assert CheckoutAction.CARD_REFRESH == checkout.action.slug
+    assert None == checkout.total
 
 
 @pytest.mark.django_db
@@ -60,3 +61,4 @@ def test_post_invoice(client):
     assert CheckoutAction.INVOICE == checkout.action.slug
     invoice = checkout.checkoutinvoice
     assert 'test@pkimber.net' == invoice.email
+    assert Decimal('0') < checkout.total

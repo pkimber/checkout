@@ -497,6 +497,10 @@ class Checkout(TimeStampedModel):
         """Did the checkout request fail?"""
         return self.state == CheckoutState.objects.fail
 
+    def invoice(self):
+        self.total = self.content_object.checkout_total
+        self.save()
+
     @property
     def invoice_data(self):
         try:
