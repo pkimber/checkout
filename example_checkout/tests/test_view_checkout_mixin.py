@@ -29,6 +29,41 @@ def test_get(client):
 
 
 @pytest.mark.django_db
+def test_post_card_payment(client, mocker):
+    mocker.patch('stripe.Charge.create')
+    mocker.patch('stripe.Customer.create')
+    obj = SalesLedgerFactory()
+    _set_session(client, obj.pk)
+    url = reverse('example.sales.ledger.checkout', args=[obj.pk])
+    data = {
+        'action': CheckoutAction.PAYMENT,
+    }
+    response = client.post(url, data)
+    assert 302 == response.status_code
+    assert 1 == Checkout.objects.count()
+    checkout = Checkout.objects.first()
+    assert CheckoutAction.PAYMENT == checkout.action.slug
+    assert Decimal('0') < checkout.total
+
+
+@pytest.mark.django_db
+def test_post_card_payment_plan(client, mocker):
+    mocker.patch('stripe.Customer.create')
+    obj = SalesLedgerFactory()
+    _set_session(client, obj.pk)
+    url = reverse('example.sales.ledger.checkout', args=[obj.pk])
+    data = {
+        'action': CheckoutAction.PAYMENT_PLAN,
+    }
+    response = client.post(url, data)
+    assert 302 == response.status_code
+    assert 1 == Checkout.objects.count()
+    checkout = Checkout.objects.first()
+    assert CheckoutAction.PAYMENT_PLAN == checkout.action.slug
+    assert None == checkout.total
+
+
+@pytest.mark.django_db
 def test_post_card_refresh(client, mocker):
     mocker.patch('stripe.Customer.create')
     obj = SalesLedgerFactory()
