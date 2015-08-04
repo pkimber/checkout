@@ -228,6 +228,7 @@ class CustomerManager(models.Manager):
         return obj
 
     def update_card_expiry(self, email):
+        """Find the customer, get the expiry date from Stripe and update."""
         try:
             obj = self._get_customer(email)
             year, month = self._stripe_get_card_expiry(obj.customer_id)
@@ -236,6 +237,10 @@ class CustomerManager(models.Manager):
                 obj.expiry_date = date(year, month, 1) + relativedelta(
                     months=+1, day=1, days=-1
                 )
+                # if expiry date within one month, then request a refresh
+                one_month = date.today() + relativedelta(months=+1)
+                if obj.expiry_date <= one_month:
+                    obj.refresh = True
                 # save the details
                 obj.save()
         except Customer.DoesNotExist:
@@ -258,6 +263,10 @@ class Customer(TimeStampedModel):
     email = models.EmailField(unique=True)
     customer_id = models.TextField()
     expiry_date = models.DateField(blank=True, null=True)
+    refresh = models.BooleanField(
+        default=False,
+        help_text='Should the customer refresh their card details?'
+    )
     objects = CustomerManager()
 
     class Meta:
