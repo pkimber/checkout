@@ -67,7 +67,7 @@ class SalesLedgerChargeUpdateView(
         return reverse('checkout.list.audit')
 
 
-class SalesLedgerCheckoutUpdateView(CheckoutMixin, BaseMixin, UpdateView):
+class SalesLedgerCheckoutView(CheckoutMixin, BaseMixin, UpdateView):
     """A charge can be made by the logged in user or an anonymous user."""
 
     model = SalesLedger

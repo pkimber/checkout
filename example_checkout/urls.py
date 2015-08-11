@@ -12,7 +12,7 @@ from .views import (
     HomeView,
     SettingsView,
     SalesLedgerChargeUpdateView,
-    SalesLedgerCheckoutUpdateView,
+    SalesLedgerCheckoutView,
     SalesLedgerSessionRedirectView,
 )
 
@@ -54,7 +54,7 @@ urlpatterns = patterns(
         name='example.sales.ledger.charge'
         ),
     url(regex=r'^sales/ledger/(?P<pk>\d+)/checkout/$',
-        view=SalesLedgerCheckoutUpdateView.as_view(),
+        view=SalesLedgerCheckoutView.as_view(),
         name='example.sales.ledger.checkout'
         ),
     url(regex=r'^sales/ledger/(?P<pk>\d+)/session/redirect/$',

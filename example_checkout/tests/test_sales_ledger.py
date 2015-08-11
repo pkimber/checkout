@@ -7,7 +7,7 @@ from finance.tests.factories import VatSettingsFactory
 
 
 @pytest.mark.django_db
-def test_link_to_payment():
+def test_link_to_checkout():
     VatSettingsFactory()
     sales_ledger = SalesLedgerFactory()
     check_checkout(sales_ledger)

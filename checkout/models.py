@@ -934,6 +934,11 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
         return reverse('project.home')
 
     @property
+    def checkout_actions(self):
+        """No actions as payment is charged directly."""
+        return []
+
+    @property
     def checkout_can_charge(self):
         """Check we can take the payment."""
         result = False
@@ -968,11 +973,16 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     def checkout_fail(self):
         """Update the object to record the payment failure.
 
-        Called from within a transaction and you can update the model.
+        Called from within a transaction so you can update the model.
 
         """
         self.state = CheckoutState.objects.fail
         self.save()
+
+    @property
+    def checkout_fail_url(self):
+        """No UI, so no URL."""
+        return None
 
     @property
     def checkout_name(self):
@@ -987,6 +997,11 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
         """
         self.state = CheckoutState.objects.success
         self.save()
+
+    @property
+    def checkout_success_url(self):
+        """No UI, so no URL."""
+        return None
 
     @property
     def checkout_total(self):
