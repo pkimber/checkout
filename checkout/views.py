@@ -172,6 +172,10 @@ class CheckoutMixin(object):
             # do stripe stuff outside of a transaction so we have some chance
             # of diagnosing progress if an exception is thrown.
             if not action.invoice:
+                if not token:
+                    raise CheckoutError(
+                        "No checkout 'token' for: '{}'".format(self.object)
+                    )
                 self._form_valid_stripe(checkout, token)
             with transaction.atomic():
                 if action.invoice:
@@ -180,11 +184,14 @@ class CheckoutMixin(object):
                 checkout.notify(self.request)
             url = self.object.checkout_success_url
             process_mail.delay()
-        except CheckoutError:
+        except CheckoutError as e:
+            logger.error(e)
             if checkout:
                 with transaction.atomic():
                     checkout.fail()
             url = self.object.checkout_fail_url
+            # PJK TODO remove temp
+            raise
         return HttpResponseRedirect(url)
 
 

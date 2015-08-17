@@ -31,17 +31,24 @@ CURRENCY = 'GBP'
 logger = logging.getLogger(__name__)
 
 
-def _log_stripe_error(e, message):
-    logger.error(
-        'StripeError\n'
-        '{}\n'
-        'http body: {}\n'
-        'http status: {}'.format(
-            message,
+def _card_error(e):
+    return (
+        "CardError: param '{}' code '{}' http body '{}' "
+        "http status '{}'".format(
+            e.param,
+            e.code,
             e.http_body,
             e.http_status,
         )
     )
+
+
+def _stripe_error(e, message):
+    return ("'{}' http body: '{}' http status: '{}'".format(
+        message,
+        e.http_body,
+        e.http_status,
+    ))
 
 
 def as_pennies(total):
@@ -171,9 +178,11 @@ class CustomerManager(models.Manager):
                 card=token,
             )
             return customer.id
-        except stripe.StripeError as e:
-            _log_stripe_error(e, '_stripe_create - email: {}'.format(email))
-            raise CheckoutError('Error creating Stripe customer') from e
+        except (stripe.InvalidRequestError, stripe.StripeError) as e:
+            raise CheckoutError(
+                "Error creating Stripe customer '{}': {}".format(
+                    email, _stripe_error(e)
+            )) from e
 
     def _stripe_get_card_expiry(self, customer_id):
         result = (0, 0)
@@ -197,8 +206,10 @@ class CustomerManager(models.Manager):
             stripe_customer.card = token
             stripe_customer.save()
         except stripe.StripeError as e:
-            _log_stripe_error(e, '_stripe_update - id: {}'.format(customer_id))
-            raise CheckoutError('Error updating Stripe customer') from e
+            raise CheckoutError(
+                "Error updating Stripe customer '{}': {}".format(
+                    email, _stripe_error(e)
+            )) from e
 
     def init_customer(self, content_object, token):
         """Initialise Stripe customer using email, description and token.
@@ -405,33 +416,15 @@ class Checkout(TimeStampedModel):
                 description=self.description,
             )
         except stripe.CardError as e:
-            logger.error(
-                'CardError\n'
-                'checkout: {}\n'
-                'param: {}\n'
-                'code: {}\n'
-                'http body: {}\n'
-                'http status: {}'.format(
-                    self.pk,
-                    e.param,
-                    e.code,
-                    e.http_body,
-                    e.http_status,
-                )
-            )
             raise CheckoutError(
-                "Card error '{}' when charging card.  Checkout: '{}'".format(
-                    e.code, self.pk,
+                "Card error '{}' checkout '{}', object '{}': {}".format(
+                    e.code, self.pk, self.content_object.pk, _card_error(e),
                 )
             ) from e
         except stripe.StripeError as e:
-            _log_stripe_error(e, 'checkout: {} content_object: {}'.format(
-                self.pk,
-                self.content_object.pk
-            ))
             raise CheckoutError(
-                "Card error '{}' when charging card.  Checkout: '{}'".format(
-                    e.code, self.pk,
+                "Card error '{}' checkout '{}', object '{}': {}".format(
+                    e.code, self.pk, self.content_object.pk, _stripe_error(e),
                 )
             ) from e
 
@@ -449,14 +442,12 @@ class Checkout(TimeStampedModel):
         if current_user.is_staff:
             self._charge()
         else:
-            message = (
-                'Cannot process - payments can only '
-                'be taken by a member of staff.'
-            )
-            logger.error("{}.  Current: '{}', Customer: '{}'".format(
-                message, current_user.email, self.customer.email
+            raise CheckoutError(
+                "Cannot process - payments can only "
+                "be taken by a member of staff. "
+                "Current: '{}', Customer: '{}'".format(
+                current_user.email, self.customer.email
             ))
-            raise CheckoutError(message)
 
     def charge_user(self, current_user):
         """Charge the card of the current user.
@@ -471,14 +462,12 @@ class Checkout(TimeStampedModel):
         if anonymous or self.customer.email == current_user.email:
             self._charge()
         else:
-            message = (
-                'Cannot process - payments can only be taken '
-                'for an anonymous user or the current user.'
-            )
-            logger.error("{}.  Current: '{}', Customer: '{}'".format(
-                message, current_user.email, self.customer.email
+            raise CheckoutError(
+                "Cannot process - payments can only be taken "
+                "for an anonymous user or the current user. "
+                "Current: '{}', Customer: '{}'".format(
+                current_user.email, self.customer.email
             ))
-            raise CheckoutError(message)
 
     @property
     def content_object_url(self):
