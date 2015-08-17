@@ -543,7 +543,7 @@ class Checkout(TimeStampedModel):
     def success(self):
         """Checkout successful - so update and notify admin."""
         self._success_or_fail(CheckoutState.objects.success)
-        return self.content_object.checkout_success
+        return self.content_object.checkout_success()
 
 reversion.register(Checkout)
 
