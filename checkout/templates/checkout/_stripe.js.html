@@ -2,7 +2,6 @@
 <script src="https://checkout.stripe.com/checkout.js"></script>
 <script>
 
-
     function displayInvoiceSection() {
         var action_data = {{ action_data|safe }};
         // only hide invoice fields if 'invoice' is an available option
@@ -18,17 +17,8 @@
             } else if (!display && !visible) {
                 // pass
             } else {
-                $('#id_company_name').parent().toggle(display);
-                $('#id_address_1').parent().toggle(display);
-                $('#id_address_2').parent().toggle(display);
-                $('#id_address_3').parent().toggle(display);
-                $('#id_town').parent().toggle(display);
-                $('#id_county').parent().toggle(display);
-                $('#id_postcode').parent().toggle(display);
-                $('#id_country').parent().toggle(display);
-                $('#id_contact_name').parent().toggle(display);
-                $('#id_email').parent().toggle(display);
-                $('#id_phone').parent().toggle(display);
+                /* This function must be defined in your own project. */
+                showHideInvoiceSection(display);
             }
         }
     }
