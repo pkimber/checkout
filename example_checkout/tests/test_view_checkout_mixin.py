@@ -37,6 +37,7 @@ def test_post_card_payment(client, mocker):
     url = reverse('example.sales.ledger.checkout', args=[obj.pk])
     data = {
         'action': CheckoutAction.PAYMENT,
+        'token': 'my-testing-token',
     }
     response = client.post(url, data)
     assert 302 == response.status_code
@@ -54,6 +55,7 @@ def test_post_card_payment_plan(client, mocker):
     url = reverse('example.sales.ledger.checkout', args=[obj.pk])
     data = {
         'action': CheckoutAction.PAYMENT_PLAN,
+        'token': 'my-testing-token',
     }
     response = client.post(url, data)
     assert 302 == response.status_code
@@ -71,6 +73,7 @@ def test_post_card_refresh(client, mocker):
     url = reverse('example.sales.ledger.checkout', args=[obj.pk])
     data = {
         'action': CheckoutAction.CARD_REFRESH,
+        'token': 'my-testing-token',
     }
     response = client.post(url, data)
     assert 302 == response.status_code
