@@ -12,6 +12,7 @@ from django.utils import timezone
 from finance.tests.factories import VatSettingsFactory
 from checkout.models import (
     Checkout,
+    CheckoutAction,
     CheckoutError,
     CheckoutState,
 )
@@ -154,6 +155,24 @@ def test_no_content_object():
     """Payments must be linked to a content object."""
     with pytest.raises(IntegrityError):
         CheckoutFactory()
+
+
+@pytest.mark.django_db
+def test_is_payment_plan():
+    checkout = CheckoutFactory(
+        action=CheckoutAction.objects.payment_plan,
+        content_object=SalesLedgerFactory(),
+    )
+    assert True == bool(checkout.is_payment_plan)
+
+
+@pytest.mark.django_db
+def test_is_payment_plan_not():
+    checkout = CheckoutFactory(
+        action=CheckoutAction.objects.payment,
+        content_object=SalesLedgerFactory(),
+    )
+    assert False == bool(checkout.is_payment_plan)
 
 
 #@pytest.mark.django_db

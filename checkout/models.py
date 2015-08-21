@@ -522,6 +522,11 @@ class Checkout(TimeStampedModel):
         except CheckoutInvoice.DoesNotExist:
             return []
 
+    @property
+    def is_payment_plan(self):
+        """Used in success templates."""
+        return self.action == CheckoutAction.objects.payment_plan
+
     def notify(self, request):
         email_addresses = [n.email for n in Notify.objects.all()]
         if email_addresses:
