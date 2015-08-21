@@ -10,10 +10,11 @@ from django.views.generic import RedirectView
 from .views import (
     ExampleRefreshExpiryDatesFormView,
     HomeView,
-    SettingsView,
     SalesLedgerChargeUpdateView,
+    SalesLedgerCheckoutThankyouView,
     SalesLedgerCheckoutView,
     SalesLedgerSessionRedirectView,
+    SettingsView,
 )
 
 admin.autodiscover()
@@ -56,6 +57,10 @@ urlpatterns = patterns(
     url(regex=r'^sales/ledger/(?P<pk>\d+)/checkout/$',
         view=SalesLedgerCheckoutView.as_view(),
         name='example.sales.ledger.checkout'
+        ),
+    url(regex=r'^sales/ledger/(?P<pk>\d+)/checkout/thankyou/$',
+        view=SalesLedgerCheckoutThankyouView.as_view(),
+        name='example.sales.ledger.checkout.thankyou'
         ),
     url(regex=r'^sales/ledger/(?P<pk>\d+)/session/redirect/$',
         view=SalesLedgerSessionRedirectView.as_view(),

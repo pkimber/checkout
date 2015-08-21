@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils import timezone
 from django.views.generic import (
+    DetailView,
     FormView,
     ListView,
     UpdateView,
@@ -20,6 +21,7 @@ from checkout.models import (
 )
 from checkout.views import (
     CheckoutMixin,
+    CheckoutThankyouMixin,
     CONTENT_OBJECT_PK,
 )
 from .forms import (
@@ -84,6 +86,12 @@ class SalesLedgerSessionRedirectView(RedirectView):
         pk = kwargs['pk']
         self.request.session[CONTENT_OBJECT_PK] = pk
         return reverse('example.sales.ledger.checkout', args=[pk])
+
+
+class SalesLedgerCheckoutThankyouView(
+          CheckoutThankyouMixin, BaseMixin, DetailView):
+
+    template_name = 'example/checkout_thankyou.html'
 
 
 class SettingsView(BaseMixin, TemplateView):

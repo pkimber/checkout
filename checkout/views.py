@@ -182,17 +182,30 @@ class CheckoutMixin(object):
                     self._form_valid_invoice(checkout, form)
                 checkout.success()
                 checkout.notify(self.request)
-            url = self.object.checkout_success_url
+            url = self.object.checkout_success_url(checkout.pk)
             process_mail.delay()
         except CheckoutError as e:
             logger.error(e)
             if checkout:
                 with transaction.atomic():
                     checkout.fail()
-            url = self.object.checkout_fail_url
+            url = self.object.checkout_fail_url(checkout.pk)
             # PJK TODO remove temp
             raise
         return HttpResponseRedirect(url)
+
+
+class CheckoutThankyouMixin(object):
+    """Thank you for your payment (etc).
+
+    Use with a ``DetailView`` e.g::
+
+      class ShopCheckoutThankyouView(
+          CheckoutThankyouMixin, BaseMixin, DetailView):
+
+    """
+
+    model = Checkout
 
 
 class ObjectPaymentPlanListView(

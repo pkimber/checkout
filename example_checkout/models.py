@@ -78,8 +78,7 @@ class SalesLedger(models.Model):
         """
         pass
 
-    @property
-    def checkout_fail_url(self):
+    def checkout_fail_url(self, checkout_pk):
         """just for testing."""
         return reverse('checkout.list.audit')
 
@@ -91,10 +90,12 @@ class SalesLedger(models.Model):
         """
         pass
 
-    @property
-    def checkout_success_url(self):
+    def checkout_success_url(self, checkout_pk):
         """just for testing."""
-        return reverse('checkout.list')
+        return reverse(
+            'example.sales.ledger.checkout.thankyou',
+            args=[checkout_pk]
+        )
 
     @property
     def checkout_total(self):

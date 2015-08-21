@@ -129,6 +129,10 @@ class CheckoutActionManager(models.Manager):
     def invoice(self):
         return self.model.objects.get(slug=self.model.INVOICE)
 
+    @property
+    def payment(self):
+        return self.model.objects.get(slug=self.model.PAYMENT)
+
 
 class CheckoutAction(TimeStampedModel):
 
@@ -968,8 +972,7 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
         self.state = CheckoutState.objects.fail
         self.save()
 
-    @property
-    def checkout_fail_url(self):
+    def checkout_fail_url(self, checkout_pk):
         """No UI, so no URL."""
         return None
 
@@ -987,8 +990,7 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
         self.state = CheckoutState.objects.success
         self.save()
 
-    @property
-    def checkout_success_url(self):
+    def checkout_success_url(self, checkout_pk):
         """No UI, so no URL."""
         return None
 
