@@ -44,9 +44,8 @@ def _card_error(e):
     )
 
 
-def _stripe_error(e, message):
-    return ("'{}' http body: '{}' http status: '{}'".format(
-        message,
+def _stripe_error(e):
+    return ("http body: '{}' http status: '{}'".format(
         e.http_body,
         e.http_status,
     ))
@@ -433,14 +432,14 @@ class Checkout(TimeStampedModel):
             )
         except stripe.CardError as e:
             raise CheckoutError(
-                "Card error '{}' checkout '{}', object '{}': {}".format(
+                "Card error: '{}' checkout '{}', object '{}': {}".format(
                     e.code, self.pk, self.content_object.pk, _card_error(e),
                 )
             ) from e
         except stripe.StripeError as e:
             raise CheckoutError(
-                "Card error '{}' checkout '{}', object '{}': {}".format(
-                    e.code, self.pk, self.content_object.pk, _stripe_error(e),
+                "Card error: checkout '{}', object '{}': {}".format(
+                    self.pk, self.content_object.pk, _stripe_error(e),
                 )
             ) from e
 
