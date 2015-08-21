@@ -67,6 +67,12 @@ def _check_perm(request, content_object):
 
 
 def _check_perm_thankyou(request, payment):
+    """Check the permissions for 'thank you' page.
+
+    We check the user (who might be anonymous) is not viewing an old
+    transaction.
+
+    """
     _check_perm(request, payment.content_object)
     td = timezone.now() - payment.created
     diff = td.days * 1440 + td.seconds / 60
