@@ -11,7 +11,7 @@ from .views import (
     ExampleRefreshExpiryDatesFormView,
     HomeView,
     SalesLedgerChargeUpdateView,
-    SalesLedgerCheckoutThankyouView,
+    SalesLedgerCheckoutSuccessView,
     SalesLedgerCheckoutView,
     SalesLedgerSessionRedirectView,
     SettingsView,
@@ -58,9 +58,9 @@ urlpatterns = patterns(
         view=SalesLedgerCheckoutView.as_view(),
         name='example.sales.ledger.checkout'
         ),
-    url(regex=r'^sales/ledger/(?P<pk>\d+)/checkout/thankyou/$',
-        view=SalesLedgerCheckoutThankyouView.as_view(),
-        name='example.sales.ledger.checkout.thankyou'
+    url(regex=r'^sales/ledger/(?P<pk>\d+)/checkout/success/$',
+        view=SalesLedgerCheckoutSuccessView.as_view(),
+        name='example.sales.ledger.checkout.success'
         ),
     url(regex=r'^sales/ledger/(?P<pk>\d+)/session/redirect/$',
         view=SalesLedgerSessionRedirectView.as_view(),

@@ -21,7 +21,7 @@ from checkout.models import (
 )
 from checkout.views import (
     CheckoutMixin,
-    CheckoutThankyouMixin,
+    CheckoutSuccessMixin,
     CONTENT_OBJECT_PK,
 )
 from .forms import (
@@ -88,10 +88,10 @@ class SalesLedgerSessionRedirectView(RedirectView):
         return reverse('example.sales.ledger.checkout', args=[pk])
 
 
-class SalesLedgerCheckoutThankyouView(
-          CheckoutThankyouMixin, BaseMixin, DetailView):
+class SalesLedgerCheckoutSuccessView(
+          CheckoutSuccessMixin, BaseMixin, DetailView):
 
-    template_name = 'example/checkout_thankyou.html'
+    template_name = 'example/checkout_success.html'
 
 
 class SettingsView(BaseMixin, TemplateView):

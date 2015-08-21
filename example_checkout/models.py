@@ -93,7 +93,7 @@ class SalesLedger(models.Model):
     def checkout_success_url(self, checkout_pk):
         """just for testing."""
         return reverse(
-            'example.sales.ledger.checkout.thankyou',
+            'example.sales.ledger.checkout.success',
             args=[checkout_pk]
         )
 

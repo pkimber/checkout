@@ -31,6 +31,6 @@ def test_get(client):
         content_object=obj,
         total=Decimal('20'),
     )
-    url = reverse('example.sales.ledger.checkout.thankyou', args=[obj.pk])
+    url = reverse('example.sales.ledger.checkout.success', args=[obj.pk])
     response = client.get(url)
     assert 200 == response.status_code

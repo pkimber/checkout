@@ -66,8 +66,8 @@ def _check_perm(request, content_object):
         raise PermissionDenied('content check failed')
 
 
-def _check_perm_thankyou(request, payment):
-    """Check the permissions for 'thank you' page.
+def _check_perm_success(request, payment):
+    """Check the permissions for the checkout success (thank you) page.
 
     We check the user (who might be anonymous) is not viewing an old
     transaction.
@@ -217,13 +217,13 @@ class CheckoutMixin(object):
         return HttpResponseRedirect(url)
 
 
-class CheckoutThankyouMixin(object):
+class CheckoutSuccessMixin(object):
     """Thank you for your payment (etc).
 
     Use with a ``DetailView`` e.g::
 
-      class ShopCheckoutThankyouView(
-          CheckoutThankyouMixin, BaseMixin, DetailView):
+      class ShopCheckoutSuccessView(
+          CheckoutSuccessMixin, BaseMixin, DetailView):
 
     """
 
@@ -231,7 +231,7 @@ class CheckoutThankyouMixin(object):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        _check_perm_thankyou(self.request, self.object)
+        _check_perm_success(self.request, self.object)
         if self.object.action == CheckoutAction.objects.payment_plan:
             checkout_settings = CheckoutSettings.objects.settings()
             payment_plan = checkout_settings.default_payment_plan
