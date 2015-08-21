@@ -4,6 +4,7 @@ import factory
 from checkout.models import (
     Checkout,
     CheckoutInvoice,
+    CheckoutSettings,
     Customer,
     PaymentPlan,
 )
@@ -51,3 +52,11 @@ class PaymentPlanFactory(factory.django.DjangoModelFactory):
     @factory.sequence
     def slug(n):
         return '{:02d}_slug'.format(n)
+
+
+class CheckoutSettingsFactory(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = CheckoutSettings
+
+    default_payment_plan = factory.SubFactory(PaymentPlanFactory)

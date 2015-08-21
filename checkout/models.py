@@ -23,6 +23,7 @@ import reversion
 import stripe
 
 from base.model_utils import TimeStampedModel
+from base.singleton import SingletonModel
 from mail.models import Notify
 from mail.service import queue_mail_message
 
@@ -122,6 +123,10 @@ reversion.register(CheckoutState)
 class CheckoutActionManager(models.Manager):
 
     @property
+    def card_refresh(self):
+        return self.model.objects.get(slug=self.model.CARD_REFRESH)
+
+    @property
     def charge(self):
         return self.model.objects.get(slug=self.model.CHARGE)
 
@@ -132,6 +137,10 @@ class CheckoutActionManager(models.Manager):
     @property
     def payment(self):
         return self.model.objects.get(slug=self.model.PAYMENT)
+
+    @property
+    def payment_plan(self):
+        return self.model.objects.get(slug=self.model.PAYMENT_PLAN)
 
 
 class CheckoutAction(TimeStampedModel):
@@ -302,10 +311,15 @@ class CheckoutManager(models.Manager):
 
     def create_checkout(self, action, content_object, user):
         """Create a checkout payment request."""
+        if action == CheckoutAction.objects.card_refresh:
+            total = None
+        else:
+            total = content_object.checkout_total
         obj = self.model(
             action=action,
             content_object=content_object,
             description=', '.join(content_object.checkout_description),
+            total=total,
         )
         # an anonymous user can create a checkout
         if user.is_authenticated():
@@ -405,8 +419,6 @@ class Checkout(TimeStampedModel):
     def _charge(self):
         """Charge the card."""
         if self.action.payment:
-            self.total = self.content_object.checkout_total
-            self.save()
             self._charge_stripe()
 
     def _charge_stripe(self):
@@ -489,10 +501,6 @@ class Checkout(TimeStampedModel):
     def failed(self):
         """Did the checkout request fail?"""
         return self.state == CheckoutState.objects.fail
-
-    def invoice(self):
-        self.total = self.content_object.checkout_total
-        self.save()
 
     @property
     def invoice_data(self):
@@ -999,3 +1007,32 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
         return self.amount
 
 reversion.register(ObjectPaymentPlanInstalment)
+
+
+class CheckoutSettingsManager(models.Manager):
+
+    def settings(self):
+        try:
+            return self.model.objects.get()
+        except self.model.DoesNotExist:
+            raise CheckoutError(
+                "Checkout settings have not been set-up in admin"
+            )
+
+
+class CheckoutSettings(SingletonModel):
+
+    default_payment_plan = models.ForeignKey(
+        PaymentPlan,
+    )
+    objects = CheckoutSettingsManager()
+
+    class Meta:
+        verbose_name = 'Checkout Settings'
+
+    def __str__(self):
+        return "Default Payment Plan: {}".format(
+            self.default_payment_plan.name
+        )
+
+reversion.register(CheckoutSettings)

@@ -11,6 +11,7 @@ from checkout.models import (
 )
 from checkout.views import CONTENT_OBJECT_PK
 from example_checkout.tests.factories import SalesLedgerFactory
+from stock.tests.factories import ProductFactory
 
 
 def _set_session(client, pk):
@@ -50,7 +51,8 @@ def test_post_card_payment(client, mocker):
 @pytest.mark.django_db
 def test_post_card_payment_plan(client, mocker):
     mocker.patch('stripe.Customer.create')
-    obj = SalesLedgerFactory()
+    product = ProductFactory(price=Decimal('12.34'))
+    obj = SalesLedgerFactory(product=product)
     _set_session(client, obj.pk)
     url = reverse('example.sales.ledger.checkout', args=[obj.pk])
     data = {
@@ -62,7 +64,7 @@ def test_post_card_payment_plan(client, mocker):
     assert 1 == Checkout.objects.count()
     checkout = Checkout.objects.first()
     assert CheckoutAction.PAYMENT_PLAN == checkout.action.slug
-    assert None == checkout.total
+    assert Decimal('12.34') == checkout.total
 
 
 @pytest.mark.django_db

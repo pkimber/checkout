@@ -12,6 +12,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.CreateModel(
+            name='CheckoutSettings',
+            fields=[
+                ('id', models.AutoField(auto_created=True, serialize=False, primary_key=True, verbose_name='ID')),
+                ('default_payment_plan', models.ForeignKey(to='checkout.PaymentPlan')),
+            ],
+            options={
+                'verbose_name': 'Checkout Settings',
+            },
+        ),
         migrations.AlterField(
             model_name='checkout',
             name='state',

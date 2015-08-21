@@ -13,7 +13,7 @@
   <div class="pure-g">
     <div class="pure-u-1">
       <h4>
-        Thankyou for your {{ object.action.name }}
+        Thankyou, '{{ object.action.name }}'
       </h4>
       <p>
         {{ object.description }}
@@ -21,6 +21,7 @@
       <p>
         £{{ object.total }}
       </p>
+      {% include 'checkout/_payment_plan_example.html' with total=object.total%}
     </div>
   </div>
 {% endblock content %}

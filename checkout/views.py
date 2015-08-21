@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import HttpResponseRedirect
+from django.utils import timezone
 from django.views.generic import (
     CreateView,
     DetailView,
@@ -35,10 +36,11 @@ from .models import (
     CheckoutAction,
     CheckoutError,
     CheckoutInvoice,
-    ObjectPaymentPlan,
-    ObjectPaymentPlanInstalment,
+    CheckoutSettings,
     CURRENCY,
     Customer,
+    ObjectPaymentPlan,
+    ObjectPaymentPlanInstalment,
     PaymentPlan,
 )
 
@@ -62,6 +64,21 @@ def _check_perm(request, content_object):
     else:
         logger.critical('content object check: invalid')
         raise PermissionDenied('content check failed')
+
+
+def _check_perm_thankyou(request, payment):
+    _check_perm(request, payment.content_object)
+    td = timezone.now() - payment.created
+    diff = td.days * 1440 + td.seconds / 60
+    if abs(diff) > 10:
+        raise CheckoutError(
+            "Cannot view this checkout transaction.  It is too old "
+            "(or has travelled in time, {} {} {}).".format(
+                payment.created.strftime('%d/%m/%Y %H:%M'),
+                timezone.now().strftime('%d/%m/%Y %H:%M'),
+                abs(diff),
+            )
+        )
 
 
 class CheckoutAuditListView(
@@ -117,7 +134,6 @@ class CheckoutMixin(object):
 
     def _form_valid_invoice(self, checkout, form):
         data = form.invoice_data()
-        checkout.invoice()
         CheckoutInvoice.objects.create_checkout_invoice(checkout, **data)
 
     def _form_valid_stripe(self, checkout, token):
@@ -206,6 +222,15 @@ class CheckoutThankyouMixin(object):
     """
 
     model = Checkout
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        _check_perm_thankyou(self.request, self.object)
+        if self.object.action == CheckoutAction.objects.payment_plan:
+            checkout_settings = CheckoutSettings.objects.settings()
+            payment_plan = checkout_settings.default_payment_plan
+            context.update(example=payment_plan.example(self.object.total))
+        return context
 
 
 class ObjectPaymentPlanListView(

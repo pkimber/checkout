@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 
 from checkout.models import (
+    CheckoutSettings,
     ObjectPaymentPlan,
     PaymentPlan,
 )
@@ -65,4 +66,7 @@ class Command(BaseCommand):
             payment_plan,
             Decimal('400'),
         )
+        # checkout settings
+        checkout_settings = CheckoutSettings(default_payment_plan=payment_plan)
+        checkout_settings.save()
         print("Created 'checkout' demo data...")
