@@ -92,7 +92,14 @@ def test_post_invoice(client):
     url = reverse('example.sales.ledger.checkout', args=[obj.pk])
     data = {
         'action': CheckoutAction.INVOICE,
-        'email': 'test@pkimber.net',
+        'company_name': 'KB',
+        'address_1': 'My Address',
+        'town': 'Hatherleigh',
+        'county': 'Devon',
+        'postcode': 'EX20',
+        'country': 'UK',
+        'contact_name': 'Patrick',
+        'email': 'test@test.com',
     }
     response = client.post(url, data)
     assert 302 == response.status_code
@@ -100,5 +107,5 @@ def test_post_invoice(client):
     checkout = Checkout.objects.first()
     assert CheckoutAction.INVOICE == checkout.action.slug
     invoice = checkout.checkoutinvoice
-    assert 'test@pkimber.net' == invoice.email
+    assert 'test@test.com' == invoice.email
     assert Decimal('0') < checkout.total

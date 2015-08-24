@@ -64,6 +64,34 @@ class CheckoutForm(forms.ModelForm):
         # hide token field
         self.fields['token'].widget = forms.HiddenInput()
 
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get('action')
+        if action == CheckoutAction.INVOICE:
+            valid = True
+            for name in (
+                'company_name',
+                'address_1',
+                'town',
+                'county',
+                'postcode',
+                'country',
+                'contact_name',
+                ):
+                valid = valid and cleaned_data.get(name).strip()
+            if valid:
+                valid = cleaned_data.get('email').strip() or cleaned_data.get('phone').strip()
+                if not valid:
+                    raise forms.ValidationError(
+                        "Please enter an email address or phone number."
+                    )
+            else:
+                raise forms.ValidationError(
+                    "Please enter a company name, address, town, county, "
+                    "postcode, country, contact name and an email address "
+                    "or phone number."
+                )
+
     def invoice_data(self):
         return dict(
             company_name=self.cleaned_data['company_name'],
