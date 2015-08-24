@@ -86,6 +86,12 @@ class CheckoutStateManager(models.Manager):
 
     @property
     def request(self):
+        """The 'request' state is used for payment plans only.
+
+        It allows the system to set the state to ``request`` before charging
+        the account.
+
+        """
         return self.model.objects.get(slug=self.model.REQUEST)
 
     @property
@@ -97,6 +103,7 @@ class CheckoutState(TimeStampedModel):
 
     FAIL = 'fail'
     PENDING = 'pending'
+    # The 'request' state is used for payment plans only.
     REQUEST = 'request'
     SUCCESS = 'success'
 
@@ -559,7 +566,7 @@ class Checkout(TimeStampedModel):
     def success(self):
         """Checkout successful - so update and notify admin."""
         self._success_or_fail(CheckoutState.objects.success)
-        return self.content_object.checkout_success()
+        return self.content_object.checkout_success
 
 reversion.register(Checkout)
 
@@ -694,6 +701,10 @@ reversion.register(PaymentPlan)
 
 class ObjectPaymentPlanManager(models.Manager):
 
+    def charge_deposit(self, content_object, user):
+        payment_plan = self.for_content_object(content_object)
+        payment_plan.charge_deposit(user)
+
     def create_object_payment_plan(self, content_object, payment_plan, total):
         """Create a payment plan for the object with the deposit record.
 
@@ -826,6 +837,13 @@ class ObjectPaymentPlan(TimeStampedModel):
                 amount,
                 due,
             )
+
+    def charge_deposit(self, user):
+        self._check_create_instalments
+        deposit = ObjectPaymentPlanInstalment.objects.first()
+        Checkout.objects.charge(deposit, user)
+        with transaction.atomic():
+            self.create_instalments()
 
     @property
     def payment_count(self):
@@ -1015,6 +1033,7 @@ reversion.register(ObjectPaymentPlanInstalment)
 
 class CheckoutSettingsManager(models.Manager):
 
+    @property
     def settings(self):
         try:
             return self.model.objects.get()

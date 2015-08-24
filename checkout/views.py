@@ -233,7 +233,7 @@ class CheckoutSuccessMixin(object):
         context = super().get_context_data(**kwargs)
         _check_perm_success(self.request, self.object)
         if self.object.action == CheckoutAction.objects.payment_plan:
-            checkout_settings = CheckoutSettings.objects.settings()
+            checkout_settings = CheckoutSettings.objects.settings
             payment_plan = checkout_settings.default_payment_plan
             context.update(example=payment_plan.example(self.object.total))
         return context
@@ -264,33 +264,34 @@ class ObjectPaymentPlanInstalmentDetailView(
     model = ObjectPaymentPlanInstalment
 
 
-class ObjectPaymentPlanInstalmentChargeUpdateView(
-        StaffuserRequiredMixin, LoginRequiredMixin, BaseMixin, UpdateView):
-    """Charge the customer's card for this instalment."""
-
-    model = ObjectPaymentPlanInstalment
-    form_class = ObjectPaymentPlanInstalmentEmptyForm
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if not self.object.checkout_can_charge:
-            messages.warning(
-                self.request, 'Payment cannot be taken for this instalment.'
-            )
-        return context
-
-    def form_valid(self, form):
-        Checkout.objects.charge(self.object, self.request.user)
-        if self.object.deposit:
-            with transaction.atomic():
-                self.object.object_payment_plan.create_instalments()
-        return HttpResponseRedirect(self.get_success_url())
-
-    def get_success_url(self):
-        return reverse(
-            'checkout.object.payment.plan.instalment',
-            args=[self.object.pk]
-        )
+#class ObjectPaymentPlanInstalmentChargeUpdateView(
+#        StaffuserRequiredMixin, LoginRequiredMixin, BaseMixin, UpdateView):
+#    """Charge the customer's card for this instalment."""
+#
+#    model = ObjectPaymentPlanInstalment
+#    form_class = ObjectPaymentPlanInstalmentEmptyForm
+#
+#    def get_context_data(self, **kwargs):
+#        context = super().get_context_data(**kwargs)
+#        if not self.object.checkout_can_charge:
+#            messages.warning(
+#                self.request, 'Payment cannot be taken for this instalment.'
+#            )
+#        return context
+#
+#    def form_valid(self, form):
+#        """Replace this code with ``ObjectPaymentPlan.charge_deposit``."""
+#        Checkout.objects.charge(self.object, self.request.user)
+#        if self.object.deposit:
+#            with transaction.atomic():
+#                self.object.object_payment_plan.create_instalments()
+#        return HttpResponseRedirect(self.get_success_url())
+#
+#    def get_success_url(self):
+#        return reverse(
+#            'checkout.object.payment.plan.instalment',
+#            args=[self.object.pk]
+#        )
 
 
 class PaymentPlanCreateView(

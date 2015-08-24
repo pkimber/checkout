@@ -34,7 +34,7 @@ def default_state(apps, schema_editor):
     _init_state_action(model, 'Charge', 'charge', True)
     _init_state_action(model, 'Invoice', 'invoice', False)
     _init_state_action(model, 'Payment', 'payment', True)
-    _init_state_action(model, 'Setup Payment Plan', 'payment_plan', False)
+    _init_state_action(model, 'Payment Plan', 'payment_plan', False)
 
     model = apps.get_model('checkout', 'CheckoutState')
     _init_state(model, 'Fail', 'fail')
