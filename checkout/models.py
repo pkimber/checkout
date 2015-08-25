@@ -342,6 +342,7 @@ class CheckoutManager(models.Manager):
         entered their card details.
 
         """
+        content_object.refresh_from_db()
         if not content_object.checkout_can_charge:
             raise CheckoutError('Cannot charge the card.')
         try:
@@ -529,6 +530,14 @@ class Checkout(TimeStampedModel):
             return []
 
     @property
+    def is_invoice(self):
+        return self.action == CheckoutAction.objects.invoice
+
+    @property
+    def is_payment(self):
+        return self.action == CheckoutAction.objects.payment
+
+    @property
     def is_payment_plan(self):
         """Used in success templates."""
         return self.action == CheckoutAction.objects.payment_plan
@@ -566,7 +575,7 @@ class Checkout(TimeStampedModel):
     def success(self):
         """Checkout successful - so update and notify admin."""
         self._success_or_fail(CheckoutState.objects.success)
-        return self.content_object.checkout_success
+        return self.content_object.checkout_success()
 
 reversion.register(Checkout)
 
@@ -851,7 +860,7 @@ class ObjectPaymentPlan(TimeStampedModel):
 
     @property
     def payments(self):
-        return self.objectpaymentplaninstalment_set.all().order_by('due')
+        return self.objectpaymentplaninstalment_set.all().order_by('count')
 
 reversion.register(ObjectPaymentPlan)
 
@@ -992,7 +1001,6 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     def checkout_email(self):
         return self.object_payment_plan.content_object.checkout_email
 
-    @property
     def checkout_fail(self):
         """Update the object to record the payment failure.
 
@@ -1010,7 +1018,6 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     def checkout_name(self):
         return self.object_payment_plan.content_object.checkout_name
 
-    @property
     def checkout_success(self):
         """Update the object to record the payment success.
 

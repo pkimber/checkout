@@ -19,13 +19,13 @@ def check_checkout(model_instance):
     # ``method`` to update the object to record the payment failure.
     # Called from within a transaction so you can update the model.
     # Note: This method should update the ``model_instance`` AND ``save`` it.
-    model_instance.checkout_fail
+    model_instance.checkout_fail()
     # method returning a url
     model_instance.checkout_fail_url(1)
     # Update the object to record the payment success.
     # Called from within a transaction so you can update the model.
     # Note: This method should update the ``model_instance`` AND ``save`` it.
-    model_instance.checkout_success
+    model_instance.checkout_success()
     # method returning a url
     model_instance.checkout_success_url(1)
     model_instance.get_absolute_url()
