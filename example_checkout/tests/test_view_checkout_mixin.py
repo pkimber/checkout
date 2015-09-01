@@ -9,6 +9,7 @@ from checkout.models import (
     CheckoutAction,
     CheckoutInvoice,
 )
+from checkout.tests.factories import CheckoutSettingsFactory
 from checkout.views import CONTENT_OBJECT_PK
 from example_checkout.tests.factories import SalesLedgerFactory
 from stock.tests.factories import ProductFactory
@@ -22,6 +23,7 @@ def _set_session(client, pk):
 
 @pytest.mark.django_db
 def test_get(client):
+    CheckoutSettingsFactory()
     obj = SalesLedgerFactory()
     _set_session(client, obj.pk)
     url = reverse('example.sales.ledger.checkout', args=[obj.pk])

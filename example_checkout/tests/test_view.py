@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
+from checkout.tests.factories import CheckoutSettingsFactory
 from checkout.views import CONTENT_OBJECT_PK
 from example_checkout.tests.factories import SalesLedgerFactory
 from finance.tests.factories import VatSettingsFactory
@@ -73,6 +74,7 @@ class TestView(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_stripe(self):
+        CheckoutSettingsFactory()
         self._set_session_payment_pk(self.sales_ledger.pk)
         response = self.client.get(
             reverse(

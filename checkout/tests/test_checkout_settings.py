@@ -16,13 +16,13 @@ def test_factory():
 @pytest.mark.django_db
 def test_settings():
     CheckoutSettingsFactory()
-    CheckoutSettings.objects.settings()
+    CheckoutSettings.objects.settings
 
 
 @pytest.mark.django_db
 def test_settings_none():
     with pytest.raises(CheckoutError) as e:
-        CheckoutSettings.objects.settings()
+        CheckoutSettings.objects.settings
     assert 'not been set-up in admin' in str(e.value)
 
 

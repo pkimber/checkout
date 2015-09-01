@@ -143,7 +143,7 @@ def test_checkout_fail():
         object_payment_plan=obj
     )
     assert CheckoutState.objects.pending == obj.state
-    obj.checkout_fail
+    obj.checkout_fail()
     assert CheckoutState.objects.fail == obj.state
 
 

@@ -87,6 +87,12 @@ def _check_perm_success(request, payment):
         )
 
 
+def payment_plan_example(total):
+    checkout_settings = CheckoutSettings.objects.settings
+    payment_plan = checkout_settings.default_payment_plan
+    return payment_plan.example(total)
+
+
 class CheckoutAuditListView(
         LoginRequiredMixin, StaffuserRequiredMixin,
         BaseMixin, ListView):
@@ -162,6 +168,10 @@ class CheckoutMixin(object):
             name=settings.STRIPE_CAPTION,
             total=as_pennies(self.object.checkout_total), # pennies
         ))
+        if CheckoutAction.PAYMENT_PLAN in self.object.checkout_actions:
+            context.update(dict(
+                example=payment_plan_example(self.object.checkout_total),
+            ))
         return context
 
     def get_form_kwargs(self):
@@ -233,9 +243,7 @@ class CheckoutSuccessMixin(object):
         context = super().get_context_data(**kwargs)
         _check_perm_success(self.request, self.object)
         if self.object.action == CheckoutAction.objects.payment_plan:
-            checkout_settings = CheckoutSettings.objects.settings
-            payment_plan = checkout_settings.default_payment_plan
-            context.update(example=payment_plan.example(self.object.total))
+            context.update(example=payment_plan_example(self.object.total))
         return context
 
 
