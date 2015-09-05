@@ -2,7 +2,9 @@
   <thead>
     <tr>
       <th>Date</th>
-      <th>Customer</th>
+      {% if not hide_customer %}
+        <th>Customer</th>
+      {% endif %}
       <th>Description</th>
       <th>Total</th>
       <th>Action</th>
@@ -19,21 +21,23 @@
             {{ o.checkout_date|date:'H:i' }}
           </small>
         </td>
-        <td>
-          {% if o.content_object_url %}
-            <a href="{{ o.content_object_url }}">
-              {{ o.content_object.checkout_name }}
-            </a>
-          {% else %}
-            {{ o.name }}
-          {% endif %}
-          <br />
-          <small>
-            <a href="mailto:{{ o.content_object.checkout_email }}">
-              {{ o.content_object.checkout_email }}
-            </a>
-          </small>
-        </td>
+        {% if not hide_customer %}
+          <td>
+            {% if o.content_object_url %}
+              <a href="{{ o.content_object_url }}">
+                {{ o.content_object.checkout_name }}
+              </a>
+            {% else %}
+              {{ o.name }}
+            {% endif %}
+            <br />
+            <small>
+              <a href="mailto:{{ o.content_object.checkout_email }}">
+                {{ o.content_object.checkout_email }}
+              </a>
+            </small>
+          </td>
+        {% endif %}
         <td>
           <small>
             {{ o.description }}
