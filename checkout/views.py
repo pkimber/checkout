@@ -151,7 +151,6 @@ class CheckoutMixin(object):
     def _form_valid_stripe(self, checkout, token):
         customer = Customer.objects.init_customer(self.object, token)
         checkout.customer = customer
-        checkout.refresh = False
         checkout.save()
         checkout.charge_user(self.request.user)
 
