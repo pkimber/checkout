@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 import factory
 
+from django.utils import timezone
+
 from checkout.models import (
     Checkout,
     CheckoutInvoice,
@@ -26,6 +28,7 @@ class CheckoutFactory(factory.django.DjangoModelFactory):
         model = Checkout
 
     customer = factory.SubFactory(CustomerFactory)
+    checkout_date = timezone.now()
 
 
 class CheckoutInvoiceFactory(factory.django.DjangoModelFactory):

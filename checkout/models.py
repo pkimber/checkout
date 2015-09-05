@@ -18,6 +18,7 @@ from django.db import (
     models,
     transaction,
 )
+from django.utils import timezone
 
 import reversion
 import stripe
@@ -322,6 +323,7 @@ class CheckoutManager(models.Manager):
         else:
             total = content_object.checkout_total
         obj = self.model(
+            checkout_date=timezone.now(),
             action=action,
             content_object=content_object,
             description=', '.join(content_object.checkout_description),
@@ -384,6 +386,7 @@ class Checkout(TimeStampedModel):
 
     """
 
+    checkout_date = models.DateTimeField()
     action = models.ForeignKey(CheckoutAction)
     customer = models.ForeignKey(
         Customer,
@@ -494,10 +497,7 @@ class Checkout(TimeStampedModel):
 
     @property
     def content_object_url(self):
-        try:
-            return self.content_object.get_absolute_url()
-        except AttributeError:
-            return None
+        return self.content_object.get_absolute_url()
 
     def fail(self):
         """Checkout failed - so update and notify admin."""
