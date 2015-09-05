@@ -14,9 +14,9 @@
       <tr valign="top">
         <td>
           <small>
-            {{ o.created|date:'d/m/Y' }}
+            {{ o.checkout_date|date:'d/m/Y' }}
             <br />
-            {{ o.created|date:'H:i' }}
+            {{ o.checkout_date|date:'H:i' }}
           </small>
         </td>
         <td>
@@ -41,9 +41,15 @@
         </td>
         <td align="right">
           {% if o.total %}
-            <strong>
-              {{ o.total }}
-            </strong>
+            {% if o.is_payment_plan %}
+              <small>
+                ({{ o.total }})
+              </small>
+            {% else %}
+              <strong>
+                {{ o.total }}
+              </strong>
+            {% endif %}
           {% endif %}
         </td>
         <td>
