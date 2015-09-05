@@ -514,6 +514,7 @@ class Checkout(TimeStampedModel):
         try:
             data = self.checkoutinvoice
             return filter(None, (
+                data.contact_name,
                 data.company_name,
                 data.address_1,
                 data.address_2,
@@ -522,7 +523,6 @@ class Checkout(TimeStampedModel):
                 data.county,
                 data.postcode,
                 data.country,
-                data.contact_name,
                 data.email,
                 data.phone,
             ))
