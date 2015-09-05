@@ -151,6 +151,7 @@ class CheckoutMixin(object):
     def _form_valid_stripe(self, checkout, token):
         customer = Customer.objects.init_customer(self.object, token)
         checkout.customer = customer
+        checkout.refresh = False
         checkout.save()
         checkout.charge_user(self.request.user)
 
@@ -159,8 +160,10 @@ class CheckoutMixin(object):
         _check_perm(self.request, self.object)
         if not self.object.checkout_can_charge:
             raise CheckoutError('Cannot charge: {}'.format(str(self.object)))
+        checkout_actions = self.object.checkout_actions
         context.update(dict(
             action_data=self._action_data(),
+            allow_pay_by_invoice=CheckoutAction.INVOICE in checkout_actions,
             currency=CURRENCY,
             description=self.object.checkout_description,
             email=self.object.checkout_email,
@@ -168,7 +171,7 @@ class CheckoutMixin(object):
             name=settings.STRIPE_CAPTION,
             total=as_pennies(self.object.checkout_total), # pennies
         ))
-        if CheckoutAction.PAYMENT_PLAN in self.object.checkout_actions:
+        if CheckoutAction.PAYMENT_PLAN in checkout_actions:
             context.update(dict(
                 example=payment_plan_example(self.object.checkout_total),
             ))

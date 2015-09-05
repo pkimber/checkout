@@ -243,7 +243,8 @@ class CustomerManager(models.Manager):
           - Create Stripe customer with email, description and token.
           - Create a customer record in the database.
 
-        Return the customer database record.
+        Return the customer database record and clear the card ``refresh``
+        flag.
 
         """
         name = content_object.checkout_name
@@ -251,12 +252,22 @@ class CustomerManager(models.Manager):
         try:
             obj = self._get_customer(email)
             obj.name = name
+            obj.refresh = False
             obj.save()
             self._stripe_update(obj.customer_id, name, token)
         except self.model.DoesNotExist:
             customer_id = self._stripe_create(email, name, token)
             obj = self._create_customer(name, email, customer_id)
         return obj
+
+    def refresh_credit_card(self, email):
+        result = False
+        try:
+            customer = self._get_customer(email)
+            result = customer.refresh
+        except self.model.DoesNotExist:
+            pass
+        return result
 
     def update_card_expiry(self, email):
         """Find the customer, get the expiry date from Stripe and update."""
