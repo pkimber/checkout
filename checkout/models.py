@@ -268,9 +268,7 @@ class CustomerManager(models.Manager):
                 obj.expiry_date = date(year, month, 1) + relativedelta(
                     months=+1, day=1, days=-1
                 )
-                # if expiry date within one month, then request a refresh
-                one_month = date.today() + relativedelta(months=+1)
-                if obj.expiry_date <= one_month:
+                if obj.is_expiring:
                     obj.refresh = True
                 # save the details
                 obj.save()
@@ -307,6 +305,23 @@ class Customer(TimeStampedModel):
 
     def __str__(self):
         return '{} {}'.format(self.email, self.customer_id)
+
+    @property
+    def is_expiring(self):
+        """Is the card expiring within the next month?
+
+        If the ``expiry_date`` is ``None``, then it has *not* expired.
+
+        The expiry date is set to the last day of the month e.g. for September
+        2015, the ``expiry_date`` will be 30/09/2015.
+
+        """
+        result = False
+        one_month = date.today() + relativedelta(months=+1)
+        if self.expiry_date and self.expiry_date <= one_month:
+            return True
+        return result
+        #return bool(self.expiry_date and self.expiry_date < date.today())
 
 reversion.register(Customer)
 
