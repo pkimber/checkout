@@ -1,0 +1,54 @@
+{% extends 'checkout/base.html' %}
+{% load static %}
+
+{% block title %}
+  Customer - Card Refresh
+{% endblock title %}
+
+{% block sub_heading %}
+  Customer - Card Refresh
+{% endblock sub_heading %}
+
+{% block content %}
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <div class="pure-menu pure-menu-horizontal">
+        <ul class="pure-menu-list">
+          {% include 'base/_settings.html' %}
+          {% include 'base/_paginate.html' %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <table class="pure-table pure-table-bordered" width="100%">
+        <thead>
+          <tr valign="top">
+            <td>
+              Name
+            </td>
+            <td>
+              Expiry
+            </td>
+          </tr>
+        </tbody>
+        <tbody>
+          {% for o in object_list %}
+            <tr valign="top">
+              <td>
+                {{ o.name }}
+                <br />
+                <a href="mailto:{{ o.email }}?subject=Update Card Details" target="_blank">
+                  {{ o.email }}
+                </a>
+              <td>
+                {{ o.expiry_date|date:'d/m/Y' }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock content %}

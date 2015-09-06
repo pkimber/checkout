@@ -260,6 +260,10 @@ class CustomerManager(models.Manager):
             obj = self._create_customer(name, email, customer_id)
         return obj
 
+    @property
+    def refresh(self):
+        return self.model.objects.filter(refresh=True)
+
     def refresh_credit_card(self, email):
         result = False
         try:
@@ -279,8 +283,8 @@ class CustomerManager(models.Manager):
                 obj.expiry_date = date(year, month, 1) + relativedelta(
                     months=+1, day=1, days=-1
                 )
-                if obj.is_expiring:
-                    obj.refresh = True
+                # is the card expiring soon?
+                obj.refresh = obj.is_expiring
                 # save the details
                 obj.save()
         except Customer.DoesNotExist:

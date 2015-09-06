@@ -108,6 +108,17 @@ class CheckoutAuditListView(
         return Checkout.objects.audit()
 
 
+class CheckoutCardRefreshListView(
+        LoginRequiredMixin, StaffuserRequiredMixin,
+        BaseMixin, ListView):
+
+    paginate_by = 10
+    template_name = 'checkout/card_refresh_list.html'
+
+    def get_queryset(self):
+        return Customer.objects.refresh
+
+
 class CheckoutListView(
         LoginRequiredMixin, StaffuserRequiredMixin,
         BaseMixin, ListView):
