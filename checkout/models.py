@@ -699,12 +699,20 @@ class PaymentPlan(TimeStampedModel):
             raise ValidationError('Set the number of months between instalments.')
 
     def save(self, *args, **kwargs):
-        if ObjectPaymentPlan.objects.filter(payment_plan=self).count():
+        if self.can_update:
+            super().save(*args, **kwargs)
+        else:
             raise CheckoutError(
                 'Payment plan in use.  Cannot be updated.'
             )
+
+    @property
+    def can_update(self):
+        count = ObjectPaymentPlan.objects.filter(payment_plan=self).count()
+        if count:
+            return False
         else:
-            super().save(*args, **kwargs)
+            return True
 
     def deposit_amount(self, total):
         return (

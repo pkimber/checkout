@@ -23,3 +23,13 @@ def test_save_in_use():
     with pytest.raises(CheckoutError) as e:
         obj.save()
     assert 'Payment plan in use.  Cannot be updated.' in str(e.value)
+
+
+@pytest.mark.django_db
+def test_save_not_in_use():
+    ObjectPaymentPlanFactory(payment_plan=PaymentPlanFactory())
+    obj = PaymentPlanFactory()
+    obj.name = 'Another Name'
+    obj.save()
+    obj.refresh_from_db()
+    assert obj.name == 'Another Name'

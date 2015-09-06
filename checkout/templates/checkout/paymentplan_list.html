@@ -30,16 +30,23 @@
             <td>
               Name
             </td>
+            <td>
+            </td>
           </tr>
         </tbody>
         <tbody>
           {% for payment_plan in object_list %}
             <tr valign="top">
               <td>
-                <a href="{% url 'checkout.payment.plan.update' payment_plan.pk %}">
-                  <i class="fa fa-edit"></i>
+                {% if payment_plan.can_update %}
+                  <a href="{% url 'checkout.payment.plan.update' payment_plan.pk %}">
+                    <i class="fa fa-edit"></i>
+                    {{ payment_plan.name }}
+                  </a>
+                {% else %}
                   {{ payment_plan.name }}
-                </a>
+                  <small>(In use so cannot be edited)</small>
+                {% endif %}
                 <br />
                 Initial deposit of
                 {{ payment_plan.deposit }}%
@@ -52,6 +59,13 @@
                 <small>
                   {% checkout_payment_plan_example payment_plan 100 %}
                 </small>
+              </td>
+              <td>
+                {% if payment_plan.can_update %}
+                  <a href="{% url 'checkout.payment.plan.delete' payment_plan.pk %}">
+                    <i class="fa fa-trash-o"></i>
+                  </a>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
