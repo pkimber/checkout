@@ -39,6 +39,9 @@ urlpatterns = patterns(
     url(regex=r'^checkout/',
         view=include('checkout.urls')
         ),
+    url(regex=r'^contact/',
+        view=include('contact.urls')
+        ),
     url(r'^home/user/$',
         view=RedirectView.as_view(
             url=reverse_lazy('project.home'),
