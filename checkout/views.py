@@ -26,6 +26,7 @@ from base.view_utils import BaseMixin
 from mail.tasks import process_mail
 
 from .forms import (
+    ObjectPaymentPlanEmptyForm,
     ObjectPaymentPlanInstalmentEmptyForm,
     PaymentPlanEmptyForm,
     PaymentPlanForm,
@@ -260,12 +261,33 @@ class CheckoutSuccessMixin(object):
         return context
 
 
+class ObjectPaymentPlanDeleteView(
+        LoginRequiredMixin, StaffuserRequiredMixin, BaseMixin, UpdateView):
+
+    form_class = ObjectPaymentPlanEmptyForm
+    model = ObjectPaymentPlan
+    template_name = 'checkout/object_paymentplan_delete.html'
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            self.object = form.save(commit=False)
+            self.object.deleted = True
+            self.object = form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse('checkout.object.payment.plan.list')
+
+
 class ObjectPaymentPlanListView(
         LoginRequiredMixin, StaffuserRequiredMixin,
         BaseMixin, ListView):
 
     model = ObjectPaymentPlan
     paginate_by = 10
+
+    def get_queryset(self):
+        return ObjectPaymentPlan.objects.outstanding_payment_plans
 
 
 class ObjectPaymentPlanCardExpiryListView(

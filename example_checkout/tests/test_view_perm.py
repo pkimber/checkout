@@ -17,6 +17,12 @@ class TestViewPerm(PermTestCase):
     def test_list_audit(self):
         self.assert_staff_only(reverse('checkout.list.audit'))
 
+    def test_object_payment_plan_delete(self):
+        obj = ObjectPaymentPlanInstalmentFactory()
+        self.assert_staff_only(
+            reverse('checkout.object.payment.plan.delete', args=[obj.pk])
+        )
+
     def test_object_payment_plan_instalment(self):
         obj = ObjectPaymentPlanInstalmentFactory()
         self.assert_staff_only(

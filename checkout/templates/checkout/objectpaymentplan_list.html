@@ -35,6 +35,8 @@
             <td>
               Payments
             </td>
+            <td>
+            </td>
           </tr>
         </tbody>
         <tbody>
@@ -83,6 +85,11 @@
                     <br />
                   {% endfor %}
                 </small>
+              </td>
+              <td>
+                <a href="{% url 'checkout.object.payment.plan.delete' o.pk %}">
+                  <i class="fa fa-trash-o"></i>
+                </a>
               </td>
             </tr>
           {% endfor %}

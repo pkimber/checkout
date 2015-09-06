@@ -5,11 +5,12 @@ from django.conf.urls import (
 )
 
 from .views import (
+    #ObjectPaymentPlanInstalmentChargeUpdateView,
     CheckoutAuditListView,
     CheckoutCardRefreshListView,
     CheckoutListView,
     ObjectPaymentPlanCardExpiryListView,
-    #ObjectPaymentPlanInstalmentChargeUpdateView,
+    ObjectPaymentPlanDeleteView,
     ObjectPaymentPlanInstalmentDetailView,
     ObjectPaymentPlanListView,
     PaymentPlanCreateView,
@@ -36,6 +37,10 @@ urlpatterns = patterns(
     url(regex=r'^object/payment/plan/$',
         view=ObjectPaymentPlanListView.as_view(),
         name='checkout.object.payment.plan.list'
+        ),
+    url(regex=r'^object/payment/plan/(?P<pk>\d+)/delete/$',
+        view=ObjectPaymentPlanDeleteView.as_view(),
+        name='checkout.object.payment.plan.delete'
         ),
     url(regex=r'^object/payment/plan/card/expiry/$',
         view=ObjectPaymentPlanCardExpiryListView.as_view(),

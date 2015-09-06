@@ -3,6 +3,7 @@ from django import forms
 
 from .models import (
     CheckoutAction,
+    ObjectPaymentPlan,
     ObjectPaymentPlanInstalment,
     PaymentPlan,
 )
@@ -106,6 +107,13 @@ class CheckoutForm(forms.ModelForm):
             email=self.cleaned_data['email'],
             phone=self.cleaned_data['phone'],
         )
+
+
+class ObjectPaymentPlanEmptyForm(forms.ModelForm):
+
+    class Meta:
+        model = ObjectPaymentPlan
+        fields = ()
 
 
 class ObjectPaymentPlanInstalmentEmptyForm(forms.ModelForm):

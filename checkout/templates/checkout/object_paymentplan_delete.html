@@ -1,0 +1,40 @@
+{% extends 'checkout/base.html' %}
+{% load static %}
+
+{% block title %}
+  Delete Payment Plan for {{ object.content_object.checkout_name }}
+{% endblock title %}
+
+{% block sub_heading %}
+  Delete Payment Plan for {{ object.content_object.checkout_name }}
+{% endblock sub_heading %}
+
+{% block content %}
+  <div class="pure-g">
+    <div class="pure-u-1">
+      <h4>
+        Click 'Delete' to remove the payment plan for
+        {{ object.content_object.checkout_name }}
+      </h4>
+      <p>
+        Total &pound;{{ object.total }}
+        <small>
+          <br />
+          {% for item in object.payments %}
+            {{ item.count }}.
+            {{ item.due|date:'d/m/Y' }}
+            &pound;{{ item.amount }}
+            {% if forloop.first %}
+              deposit
+            {% elif forloop.last %}
+              final
+            {% endif %}
+            ({{ item.state.name }})
+            <br />
+          {% endfor %}
+        </small>
+      </p>
+      {% include '_form.html' with submit='Delete' %}
+    </div>
+  </div>
+{% endblock content %}
