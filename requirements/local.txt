@@ -13,11 +13,12 @@ django_extensions
 factory-boy
 gitpython
 hgapi
-ipdb
+pdbpp
 psycopg2
 pytest-django
 pytest-flakes
 pytest-mock
 pytest-pep8
 pyyaml
+setuptools_scm
 walkdir
