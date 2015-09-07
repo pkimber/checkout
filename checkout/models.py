@@ -796,12 +796,11 @@ class ObjectPaymentPlanManager(models.Manager):
 
         Used to refresh card expiry dates.
 
+        TODO PJK This is NOT going to work.  This property is also used for the
+        list of payment plans.
+
         """
-        return self.model.objects.exclude(
-            deleted=True,
-        ).exclude(
-            objectpaymentplaninstalment__state__slug=CheckoutState.SUCCESS
-        )
+        return self.model.objects.exclude(deleted=True)
 
     @property
     def report_card_expiry_dates(self):
@@ -858,9 +857,7 @@ class ObjectPaymentPlan(TimeStampedModel):
     @property
     def _check_create_instalments(self):
         """Check the current records to make sure we can create instalments."""
-        instalments = ObjectPaymentPlanInstalment.objects.filter(
-            object_payment_plan=self
-        )
+        instalments = self.objectpaymentplaninstalment_set.all()
         count = instalments.count()
         if not count:
             # a payment plan should always have a deposit record
@@ -898,7 +895,7 @@ class ObjectPaymentPlan(TimeStampedModel):
 
     def charge_deposit(self, user):
         self._check_create_instalments
-        deposit = ObjectPaymentPlanInstalment.objects.first()
+        deposit = self.objectpaymentplaninstalment_set.first()
         Checkout.objects.charge(deposit, user)
         with transaction.atomic():
             self.create_instalments()
