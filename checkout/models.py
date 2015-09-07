@@ -10,6 +10,7 @@ from dateutil.rrule import (
 from decimal import Decimal
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -491,11 +492,13 @@ class Checkout(TimeStampedModel):
     def charge(self, current_user):
         """Charge the user's card.
 
-        Must be a member of staff to use this method.  To take payments for the
-        current user, use the ``charge_user`` method.
+        Must be a member of staff or anonymous (used when running as a
+        background task) to use this method.
+
+        To take payments for the current user, use the ``charge_user`` method.
 
         """
-        if current_user.is_staff:
+        if current_user.is_staff or current_user.is_anonymous:
             self._charge()
         else:
             raise CheckoutError(
@@ -934,7 +937,7 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
 
         """
         return self.model.objects.filter(
-            due__gte=date.today(),
+            due__lte=date.today(),
             state__slug=CheckoutState.PENDING,
         ).exclude(
             object_payment_plan__deleted=True,
@@ -949,7 +952,7 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
         not careful, we could have a situation where the payment succeeds and
         we don't manage to set the state to 'success'.  In the code below, if
         the payment fails the record will be left in the 'request' state and
-        so we won't not ask for the money again.
+        so we won't ask for the money again.
 
         """
         pks = [o.pk for o in self.due]
@@ -966,7 +969,7 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
                 instalment.state = CheckoutState.objects.request
                 instalment.save()
             # request payment
-            Checkout.objects.charge(instalment, self.request.user)
+            Checkout.objects.charge(instalment, AnonymousUser())
 
 
 class ObjectPaymentPlanInstalment(TimeStampedModel):
@@ -977,6 +980,8 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
 
     The instalment records are created after the deposit has been collected.
     Instalment records have the ``deposit`` field set to ``False``.
+
+    PJK TODO Why does the ``due`` date allow ``blank``/``null``?
 
     """
 
@@ -1020,7 +1025,7 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     def checkout_can_charge(self):
         """Check we can take the payment."""
         result = False
-        if self.state.slug in (CheckoutState.FAIL, CheckoutState.PENDING):
+        if self.state.slug == CheckoutState.REQUEST:
             if self.due:
                 result = self.due <= date.today()
             else:

@@ -12,7 +12,10 @@ from checkout.models import (
     ObjectPaymentPlan,
     ObjectPaymentPlanInstalment,
 )
-from checkout.tests.factories import PaymentPlanFactory
+from checkout.tests.factories import (
+    CustomerFactory,
+    PaymentPlanFactory,
+)
 from checkout.tests.helper import check_checkout
 from login.tests.factories import UserFactory
 from .factories import (
@@ -26,7 +29,7 @@ from .factories import (
 def test_can_charge_due():
     obj = ObjectPaymentPlanInstalmentFactory(
         due=date.today(),
-        state=CheckoutState.objects.pending
+        state=CheckoutState.objects.request
     )
     assert obj.checkout_can_charge
 
@@ -35,7 +38,7 @@ def test_can_charge_due():
 def test_can_charge_overdue():
     obj = ObjectPaymentPlanInstalmentFactory(
         due=date.today()+relativedelta(days=-10),
-        state=CheckoutState.objects.pending
+        state=CheckoutState.objects.request
     )
     assert obj.checkout_can_charge
 
@@ -44,7 +47,7 @@ def test_can_charge_overdue():
 def test_can_charge_due_not_yet():
     obj = ObjectPaymentPlanInstalmentFactory(
         due=date.today()+relativedelta(days=10),
-        state=CheckoutState.objects.pending
+        state=CheckoutState.objects.request
     )
     assert not obj.checkout_can_charge
 
@@ -54,7 +57,7 @@ def test_can_charge_fail():
     obj = ObjectPaymentPlanInstalmentFactory(
         state=CheckoutState.objects.fail
     )
-    assert obj.checkout_can_charge
+    assert not obj.checkout_can_charge
 
 
 @pytest.mark.django_db
@@ -62,7 +65,7 @@ def test_can_charge_pending():
     obj = ObjectPaymentPlanInstalmentFactory(
         state=CheckoutState.objects.pending
     )
-    assert obj.checkout_can_charge
+    assert not obj.checkout_can_charge
 
 
 @pytest.mark.django_db
@@ -70,7 +73,7 @@ def test_can_charge_request():
     obj = ObjectPaymentPlanInstalmentFactory(
         state=CheckoutState.objects.request
     )
-    assert not obj.checkout_can_charge
+    assert obj.checkout_can_charge
 
 
 @pytest.mark.django_db
@@ -221,12 +224,12 @@ def test_due():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
         count=1,
-        due=today+relativedelta(days=1),
+        due=today+relativedelta(days=-1),
         amount=Decimal('1')
     )
     ObjectPaymentPlanInstalmentFactory(
         count=2,
-        due=today+relativedelta(days=2),
+        due=today+relativedelta(days=-2),
         amount=Decimal('2')
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
@@ -237,7 +240,7 @@ def test_due():
 def test_due_plan_deleted():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=1),
+        due=today+relativedelta(days=-1),
         amount=Decimal('1')
     )
     object_payment_plan = ObjectPaymentPlanFactory(deleted=True)
@@ -247,7 +250,7 @@ def test_due_plan_deleted():
         amount=Decimal('2')
     )
     ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=3),
+        due=today+relativedelta(days=-3),
         amount=Decimal('3')
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
@@ -258,15 +261,15 @@ def test_due_plan_deleted():
 def test_due_not_due():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=1),
+        due=today+relativedelta(days=-1),
         amount=Decimal('1')
     )
     ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=-1),
+        due=today+relativedelta(days=1),
         amount=Decimal('2')
     )
     ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=3),
+        due=today+relativedelta(days=-3),
         amount=Decimal('3')
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
@@ -277,16 +280,16 @@ def test_due_not_due():
 def test_due_not_pending():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=1),
+        due=today+relativedelta(days=-1),
         amount=Decimal('1')
     )
     ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=2),
+        due=today+relativedelta(days=-2),
         state=CheckoutState.objects.fail,
         amount=Decimal('2')
     )
     ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=3),
+        due=today+relativedelta(days=-3),
         amount=Decimal('3')
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
@@ -299,24 +302,42 @@ def test_factory():
 
 
 @pytest.mark.django_db
-def test_process_payments():
+def test_process_payments(mocker):
     """Process payments.
 
     I cannot get this to run as a test because I don't know how to create a
     test Stripe customer.
 
     """
+    mocker.patch('stripe.Charge.create')
+    mocker.patch('stripe.Customer.create')
     today = date.today()
-    ObjectPaymentPlanInstalmentFactory(
+    install_1 = ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=1),
-        amount=Decimal('1')
-    )
-    ObjectPaymentPlanInstalmentFactory(
-        due=today+relativedelta(days=2),
         amount=Decimal('2')
     )
-    # TODO Uncomment this if I can work out how to create a test Stripe customer
-    # ContactPlanPayment.objects.process_payments
+    install_2 = ObjectPaymentPlanInstalmentFactory(
+        due=today+relativedelta(days=-1),
+        amount=Decimal('1')
+    )
+    install_3 = ObjectPaymentPlanInstalmentFactory(
+        due=today+relativedelta(days=-2),
+        amount=Decimal('2')
+    )
+    CustomerFactory(
+        email=install_2.object_payment_plan.content_object.checkout_email
+    )
+    CustomerFactory(
+        email=install_3.object_payment_plan.content_object.checkout_email
+    )
+    ObjectPaymentPlanInstalment.objects.process_payments
+    # check
+    install_1.refresh_from_db()
+    assert install_1.state == CheckoutState.objects.pending
+    install_2.refresh_from_db()
+    assert install_2.state == CheckoutState.objects.success
+    install_3.refresh_from_db()
+    assert install_3.state == CheckoutState.objects.success
 
 
 @pytest.mark.django_db
