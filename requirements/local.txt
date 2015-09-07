@@ -13,7 +13,6 @@ django_extensions
 factory-boy
 gitpython
 hgapi
-pdbpp
 psycopg2
 pytest-django
 pytest-flakes
@@ -22,3 +21,5 @@ pytest-pep8
 pyyaml
 setuptools_scm
 walkdir
+# must come after ``setuptools_scm``
+pdbpp
