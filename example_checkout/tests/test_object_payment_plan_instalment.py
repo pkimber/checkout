@@ -258,6 +258,26 @@ def test_due_plan_deleted():
 
 
 @pytest.mark.django_db
+def test_due_plan_deposit():
+    today = date.today()
+    ObjectPaymentPlanInstalmentFactory(
+        due=today+relativedelta(days=-1),
+        amount=Decimal('1')
+    )
+    ObjectPaymentPlanInstalmentFactory(
+        deposit=True,
+        due=today+relativedelta(days=-2),
+        amount=Decimal('2')
+    )
+    ObjectPaymentPlanInstalmentFactory(
+        due=today+relativedelta(days=-3),
+        amount=Decimal('3')
+    )
+    result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
+    assert [Decimal('1'), Decimal('3')] == result
+
+
+@pytest.mark.django_db
 def test_due_not_due():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(

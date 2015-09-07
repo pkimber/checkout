@@ -50,11 +50,11 @@ def test_create_object_payment_plan():
             Decimal('100')
         )
     object_payment_plan = ObjectPaymentPlan.objects.for_content_object(contact)
-    # check deposit - count should be '1' and the 'due' date should be 'None'
+    # check deposit - count should be '1' and the 'due' date ``today``
     result = [
         (p.count, p.amount, p.due) for p in object_payment_plan.payments
     ]
-    assert [(1, Decimal('20'), None)] == result
+    assert [(1, Decimal('20'), date.today())] == result
     # create the instalments
     with transaction.atomic():
         # this must be run within a transaction
@@ -63,7 +63,7 @@ def test_create_object_payment_plan():
         (p.count, p.amount, p.due) for p in object_payment_plan.payments
     ]
     assert [
-        (1, Decimal('20'), None),
+        (1, Decimal('20'), date.today()),
         (2, Decimal('40'), date.today() + relativedelta(months=+1)),
         (3, Decimal('40'), date.today() + relativedelta(months=+2)),
     ] == result

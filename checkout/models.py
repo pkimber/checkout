@@ -780,7 +780,7 @@ class ObjectPaymentPlanManager(models.Manager):
             1,
             True,
             payment_plan.deposit_amount(total),
-            None
+            date.today()
         )
         return obj
 
@@ -940,6 +940,8 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
             due__lte=date.today(),
             state__slug=CheckoutState.PENDING,
         ).exclude(
+            deposit=True,
+        ).exclude(
             object_payment_plan__deleted=True,
         )
 
@@ -994,7 +996,7 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     )
     deposit = models.BooleanField(help_text='Is this the initial payment')
     amount = models.DecimalField(max_digits=8, decimal_places=2)
-    due = models.DateField(blank=True, null=True)
+    due = models.DateField()
     objects = ObjectPaymentPlanInstalmentManager()
 
     class Meta:
