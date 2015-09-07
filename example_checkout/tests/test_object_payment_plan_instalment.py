@@ -26,6 +26,26 @@ from .factories import (
 
 
 @pytest.mark.django_db
+def test_can_charge_deposit():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        deposit=True,
+        due=date.today(),
+        state=CheckoutState.objects.pending
+    )
+    assert obj.checkout_can_charge
+
+
+@pytest.mark.django_db
+def test_can_charge_deposit_not_pending():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        deposit=True,
+        due=date.today(),
+        state=CheckoutState.objects.request
+    )
+    assert not obj.checkout_can_charge
+
+
+@pytest.mark.django_db
 def test_can_charge_due():
     obj = ObjectPaymentPlanInstalmentFactory(
         due=date.today(),
@@ -56,6 +76,15 @@ def test_can_charge_due_not_yet():
 def test_can_charge_fail():
     obj = ObjectPaymentPlanInstalmentFactory(
         state=CheckoutState.objects.fail
+    )
+    assert not obj.checkout_can_charge
+
+
+@pytest.mark.django_db
+def test_can_charge_not_deposit():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        due=date.today(),
+        state=CheckoutState.objects.pending
     )
     assert not obj.checkout_can_charge
 

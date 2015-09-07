@@ -1027,11 +1027,12 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     def checkout_can_charge(self):
         """Check we can take the payment."""
         result = False
-        if self.state.slug == CheckoutState.REQUEST:
-            if self.due:
-                result = self.due <= date.today()
-            else:
-                result = True
+        if self.deposit:
+            check = self.state.slug == CheckoutState.PENDING
+        else:
+            check = self.state.slug == CheckoutState.REQUEST
+        if check:
+            result = self.due <= date.today()
         return result
 
     @property
