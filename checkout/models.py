@@ -722,11 +722,17 @@ class PaymentPlan(TimeStampedModel):
             total * (self.deposit / Decimal('100'))
         ).quantize(Decimal('.01'))
 
-    def instalments(self, total):
+    def instalments(self, deposit_due_date, total):
         # deposit
         deposit = self.deposit_amount(total)
         # list of dates
-        start_date = date.today() + relativedelta(months=+self.interval)
+        first_interval = self.interval
+        if deposit_due_date.day > 15:
+            first_interval = first_interval + 1
+        start_date = deposit_due_date + relativedelta(
+            months=+first_interval,
+            day=1,
+        )
         instalment_dates = [d.date() for d in rrule(
             MONTHLY,
             count=self.count,
@@ -748,11 +754,11 @@ class PaymentPlan(TimeStampedModel):
         values[-1] = values[-1] + (total - check)
         return list(zip(instalment_dates, values))
 
-    def example(self, total):
+    def example(self, deposit_due_date, total):
         result = [
-            (date.today(), self.deposit_amount(total)),
+            (deposit_due_date, self.deposit_amount(total)),
         ]
-        return result + self.instalments(total)
+        return result + self.instalments(deposit_due_date, total)
 
 reversion.register(PaymentPlan)
 
@@ -764,7 +770,7 @@ class ObjectPaymentPlanManager(models.Manager):
         payment_plan.charge_deposit(user)
 
     def create_object_payment_plan(self, content_object, payment_plan, total):
-        """Create a payment plan for the object with the deposit record.
+        """Create a payment plan for an object with the initial deposit record.
 
         This method must be called from within a transaction.
 
@@ -867,7 +873,10 @@ class ObjectPaymentPlan(TimeStampedModel):
             )
         if count == 1:
             # check the first payment is the deposit
-            if not instalments.first().deposit:
+            first_instalment = instalments.first()
+            if first_instalment.deposit:
+                deposit_due_date = first_instalment.due
+            else:
                 raise CheckoutError(
                     "no deposit record for "
                     "payment plan: '{}'".format(self.pk)
@@ -878,10 +887,15 @@ class ObjectPaymentPlan(TimeStampedModel):
                 "instalments already created for this "
                 "payment plan: '{}'".format(self.pk)
             )
+        return deposit_due_date
 
     def create_instalments(self):
-        self._check_create_instalments
-        instalments = self.payment_plan.instalments(self.total)
+        deposit_due_date = self._check_create_instalments
+        instalments = self.payment_plan.instalments(
+            deposit_due_date,
+
+            self.total
+        )
         count = 1
         for due, amount in instalments:
             count = count + 1

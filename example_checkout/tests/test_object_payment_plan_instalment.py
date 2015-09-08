@@ -350,6 +350,61 @@ def test_factory():
     ObjectPaymentPlanInstalmentFactory()
 
 
+
+
+
+
+@pytest.mark.django_db
+def test_create_instalments_first_of_month():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        amount=Decimal('50'),
+        count=1,
+        deposit=True,
+        due=date(2015, 3, 10),
+    )
+    obj.object_payment_plan.create_instalments()
+    assert date(2015, 3, 10) == ObjectPaymentPlanInstalment.objects.get(
+        count=1
+    ).due
+    assert date(2015, 4, 1) == ObjectPaymentPlanInstalment.objects.get(
+        count=2
+    ).due
+    assert date(2015, 5, 1) == ObjectPaymentPlanInstalment.objects.get(
+        count=3
+    ).due
+
+
+@pytest.mark.django_db
+def test_create_instalments_first_of_month_after_15th():
+    obj = ObjectPaymentPlanInstalmentFactory(
+        amount=Decimal('50'),
+        count=1,
+        deposit=True,
+        due=date(2015, 3, 17),
+    )
+    obj.object_payment_plan.create_instalments()
+    assert date(2015, 3, 17) == ObjectPaymentPlanInstalment.objects.get(
+        count=1
+    ).due
+    assert date(2015, 5, 1) == ObjectPaymentPlanInstalment.objects.get(
+        count=2
+    ).due
+    assert date(2015, 6, 1) == ObjectPaymentPlanInstalment.objects.get(
+        count=3
+    ).due
+
+
+
+
+
+
+
+
+
+
+
+
+
 @pytest.mark.django_db
 def test_process_payments(mocker):
     """Process payments.

@@ -47,10 +47,11 @@ def test_simple():
     # deposit
     assert Decimal('20') == plan.deposit_amount(total)
     # instalments
-    result = plan.instalments(total)
+    deposit_due_date = date(2015, 1, 2)
+    result = plan.instalments(deposit_due_date, total)
     assert [
-        (date.today() + relativedelta(months=+1), Decimal('40')),
-        (date.today() + relativedelta(months=+2), Decimal('40')),
+        (deposit_due_date + relativedelta(months=+1, day=1), Decimal('40')),
+        (deposit_due_date + relativedelta(months=+2, day=1), Decimal('40')),
     ] == result
 
 
@@ -65,14 +66,15 @@ def test_illustration_typical():
     # deposit
     assert Decimal('90') == plan.deposit_amount(total)
     # instalments
-    result = plan.instalments(total)
+    deposit_due_date = date(2015, 1, 22)
+    result = plan.instalments(deposit_due_date, total)
     assert [
-        (date.today() + relativedelta(months=+1), Decimal('85')),
-        (date.today() + relativedelta(months=+2), Decimal('85')),
-        (date.today() + relativedelta(months=+3), Decimal('85')),
-        (date.today() + relativedelta(months=+4), Decimal('85')),
-        (date.today() + relativedelta(months=+5), Decimal('85')),
-        (date.today() + relativedelta(months=+6), Decimal('85')),
+        (deposit_due_date + relativedelta(months=+2, day=1), Decimal('85')),
+        (deposit_due_date + relativedelta(months=+3, day=1), Decimal('85')),
+        (deposit_due_date + relativedelta(months=+4, day=1), Decimal('85')),
+        (deposit_due_date + relativedelta(months=+5, day=1), Decimal('85')),
+        (deposit_due_date + relativedelta(months=+6, day=1), Decimal('85')),
+        (deposit_due_date + relativedelta(months=+7, day=1), Decimal('85')),
     ] == result
 
 
@@ -87,11 +89,12 @@ def test_illustration_awkward():
     # deposit
     assert Decimal('100') == plan.deposit_amount(total)
     # instalments
-    result = plan.instalments(total)
+    deposit_due_date = date(2015, 1, 2)
+    result = plan.instalments(deposit_due_date, total)
     assert [
-        (date.today() + relativedelta(months=+2), Decimal('33.33')),
-        (date.today() + relativedelta(months=+4), Decimal('33.33')),
-        (date.today() + relativedelta(months=+6), Decimal('33.34')),
+        (deposit_due_date + relativedelta(months=+2, day=1), Decimal('33.33')),
+        (deposit_due_date + relativedelta(months=+4, day=1), Decimal('33.33')),
+        (deposit_due_date + relativedelta(months=+6, day=1), Decimal('33.34')),
     ] == result
 
 
@@ -102,5 +105,8 @@ def test_example():
         count=2,
         interval=1
     )
-    result = [item[1] for item in plan.example(Decimal('100'))]
+    deposit_due_date = date(2015, 1, 2)
+    result = [
+        item[1] for item in plan.example(deposit_due_date, Decimal('100'))
+    ]
     assert [Decimal('50'), Decimal('25'), Decimal('25')] == result

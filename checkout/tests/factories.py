@@ -44,7 +44,7 @@ class PaymentPlanFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = PaymentPlan
 
-    deposit = 20
+    deposit = 50
     count = 2
     interval = 1
 

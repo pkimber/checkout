@@ -64,8 +64,8 @@ def test_create_object_payment_plan():
     ]
     assert [
         (1, Decimal('20'), date.today()),
-        (2, Decimal('40'), date.today() + relativedelta(months=+1)),
-        (3, Decimal('40'), date.today() + relativedelta(months=+2)),
+        (2, Decimal('40'), date.today() + relativedelta(months=+1, day=1)),
+        (3, Decimal('40'), date.today() + relativedelta(months=+2, day=1)),
     ] == result
 
 
