@@ -61,30 +61,7 @@
                 {{ o.created|date:'H:i' }}
               </td>
               <td>
-                <small>
-                  Total: &pound;{{ o.total }}
-                  <br />
-                  {% for item in o.payments %}
-                    {{ item.count }}.
-                    {{ item.due|date:'d/m/Y' }}
-                    &pound;{{ item.amount }}
-                    {% if forloop.first %}
-                      deposit
-                    {% elif forloop.last %}
-                      final
-                    {% endif %}
-                    ({{ item.state.name }})
-                    <!--
-                    {# if item.checkout_can_charge #}
-                      <a href="{# url 'checkout.object.payment.plan.instalment.charge' item.pk #}">
-                        <i class="fa fa-credit-card"></i>
-                        Charge now...
-                      </a>
-                    {# endif #}
-                    -->
-                    <br />
-                  {% endfor %}
-                </small>
+                {% include 'checkout/_total_and_instalments.html' %}
               </td>
               <td>
                 <a href="{% url 'checkout.object.payment.plan.delete' o.pk %}">
