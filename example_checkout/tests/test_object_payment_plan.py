@@ -113,8 +113,9 @@ def test_outstanding_payment_plans():
 
 @pytest.mark.django_db
 def test_outstanding_payment_plans_exclude_deleted():
+    obj = ObjectPaymentPlanFactory(deleted=True)
+    ObjectPaymentPlanInstalmentFactory(object_payment_plan=obj)
     ObjectPaymentPlanInstalmentFactory()
-    ObjectPaymentPlanInstalmentFactory(state=CheckoutState.objects.success)
     assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
 
 
@@ -122,6 +123,19 @@ def test_outstanding_payment_plans_exclude_deleted():
 def test_outstanding_payment_plans_exclude_success():
     ObjectPaymentPlanInstalmentFactory()
     ObjectPaymentPlanInstalmentFactory(state=CheckoutState.objects.success)
+    assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
+
+
+@pytest.mark.django_db
+def test_outstanding_payment_plans_filter_two():
+    obj = ObjectPaymentPlanFactory()
+    ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=obj
+    )
+    ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=obj,
+        due=date.today() + relativedelta(months=+1),
+    )
     assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
 
 

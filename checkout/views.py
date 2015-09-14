@@ -3,6 +3,8 @@ import json
 import logging
 import stripe
 
+from datetime import date
+
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
@@ -91,7 +93,7 @@ def _check_perm_success(request, payment):
 def payment_plan_example(total):
     checkout_settings = CheckoutSettings.objects.settings
     payment_plan = checkout_settings.default_payment_plan
-    return payment_plan.example(total)
+    return payment_plan.example(date.today(), total)
 
 
 class CheckoutAuditListView(

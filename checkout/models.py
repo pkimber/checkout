@@ -19,6 +19,7 @@ from django.db import (
     models,
     transaction,
 )
+from django.db.models import Q
 from django.utils import timezone
 
 import reversion
@@ -802,11 +803,23 @@ class ObjectPaymentPlanManager(models.Manager):
 
         Used to refresh card expiry dates.
 
-        TODO PJK This is NOT going to work.  This property is also used for the
-        list of payment plans.
-
         """
-        return self.model.objects.exclude(deleted=True)
+        values = ObjectPaymentPlanInstalment.objects.filter(
+            state__slug__in=(
+                CheckoutState.FAIL,
+                CheckoutState.PENDING,
+                CheckoutState.REQUEST,
+            ),
+        ).values_list(
+            'object_payment_plan__pk',
+            flat=True
+        )
+        # 'set' will remove duplicate 'values'
+        return self.model.objects.filter(
+            pk__in=(set(values)),
+        ).exclude(
+            deleted=True,
+        )
 
     @property
     def report_card_expiry_dates(self):
