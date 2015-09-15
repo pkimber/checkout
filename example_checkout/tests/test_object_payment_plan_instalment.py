@@ -8,25 +8,19 @@ from decimal import Decimal
 from django.db import transaction
 
 from checkout.models import (
-    CheckoutAction,
     CheckoutState,
     ObjectPaymentPlan,
     ObjectPaymentPlanInstalment,
 )
 from checkout.tests.factories import (
-    CheckoutFactory,
     CustomerFactory,
     ObjectPaymentPlanFactory,
     ObjectPaymentPlanInstalmentFactory,
     PaymentPlanFactory,
 )
 from checkout.tests.helper import check_checkout
-from example_checkout.tests.factories import SalesLedgerFactory
 from login.tests.factories import UserFactory
-from .factories import (
-    ContactFactory,
-    SalesLedgerFactory,
-)
+from .factories import ContactFactory
 
 
 @pytest.mark.django_db

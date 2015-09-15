@@ -15,7 +15,7 @@ def test_invoice_data():
         action=CheckoutAction.objects.invoice,
         content_object=SalesLedgerFactory(),
     )
-    checkout_invoice = CheckoutInvoiceFactory(
+    CheckoutInvoiceFactory(
         checkout=checkout,
         company_name='KB',
         email='test@pkimber.net',

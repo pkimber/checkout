@@ -7,7 +7,6 @@ from django.core.urlresolvers import reverse
 from checkout.models import (
     Checkout,
     CheckoutAction,
-    CheckoutInvoice,
 )
 from checkout.tests.factories import CheckoutSettingsFactory
 from checkout.views import CONTENT_OBJECT_PK

@@ -19,7 +19,6 @@ from django.db import (
     models,
     transaction,
 )
-from django.db.models import Q
 from django.utils import timezone
 
 import reversion
@@ -230,7 +229,7 @@ class CustomerManager(models.Manager):
         except stripe.StripeError as e:
             raise CheckoutError(
                 "Error updating Stripe customer '{}': {}".format(
-                    email, _stripe_error(e)
+                    customer_id, _stripe_error(e)
             )) from e
 
     def init_customer(self, content_object, token):

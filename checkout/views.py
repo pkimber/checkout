@@ -1,12 +1,10 @@
 # -*- encoding: utf-8 -*-
 import json
 import logging
-import stripe
 
 from datetime import date
 
 from django.conf import settings
-from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db import transaction
@@ -29,7 +27,6 @@ from mail.tasks import process_mail
 
 from .forms import (
     ObjectPaymentPlanEmptyForm,
-    ObjectPaymentPlanInstalmentEmptyForm,
     PaymentPlanEmptyForm,
     PaymentPlanForm,
 )

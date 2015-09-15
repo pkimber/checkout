@@ -1,25 +1,11 @@
 # -*- encoding: utf-8 -*-
 import pytest
 
-from dateutil.relativedelta import relativedelta
-from decimal import Decimal
-
-from django.core.urlresolvers import reverse
 from django.db import IntegrityError
-from django.test.client import RequestFactory
-from django.utils import timezone
 
-from finance.tests.factories import VatSettingsFactory
-from checkout.models import (
-    Checkout,
-    CheckoutAction,
-    CheckoutError,
-    CheckoutState,
-)
+from checkout.models import CheckoutAction
 from checkout.tests.factories import CheckoutFactory
-from stock.tests.factories import ProductFactory
 
-from example_checkout.models import SalesLedger
 from example_checkout.tests.factories import SalesLedgerFactory
 
 
