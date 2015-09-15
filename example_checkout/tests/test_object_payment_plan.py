@@ -14,23 +14,21 @@ from checkout.models import (
 )
 from checkout.tests.factories import (
     CustomerFactory,
-    PaymentPlanFactory,
-)
-from .factories import (
-    ContactFactory,
     ObjectPaymentPlanFactory,
     ObjectPaymentPlanInstalmentFactory,
+    PaymentPlanFactory,
 )
+from .factories import ContactFactory
 
 
 @pytest.mark.django_db
 def test_factory():
-    ObjectPaymentPlanFactory()
+    ObjectPaymentPlanFactory(content_object=ContactFactory())
 
 
 @pytest.mark.django_db
 def test_str():
-    str(ObjectPaymentPlanFactory())
+    str(ObjectPaymentPlanFactory(content_object=ContactFactory()))
 
 
 @pytest.mark.django_db
@@ -92,7 +90,7 @@ def test_create_instalments_once_only():
 
 @pytest.mark.django_db
 def test_create_instalments_no_deposit():
-    obj = ObjectPaymentPlanFactory()
+    obj = ObjectPaymentPlanFactory(content_object=ContactFactory())
     with pytest.raises(CheckoutError) as e:
         obj.create_instalments()
     assert 'no deposit/instalment record' in str(e.value)
@@ -100,7 +98,13 @@ def test_create_instalments_no_deposit():
 
 @pytest.mark.django_db
 def test_create_instalments_corrupt():
-    obj = ObjectPaymentPlanInstalmentFactory(count=2)
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
+    obj = ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=object_payment_plan,
+        count=2,
+    )
     with pytest.raises(CheckoutError) as e:
         obj.object_payment_plan.create_instalments()
     assert 'no deposit record' in str(e.value)
@@ -113,22 +117,38 @@ def test_outstanding_payment_plans():
 
 @pytest.mark.django_db
 def test_outstanding_payment_plans_exclude_deleted():
-    obj = ObjectPaymentPlanFactory(deleted=True)
+    obj = ObjectPaymentPlanFactory(
+        content_object=ContactFactory(),
+        deleted=True,
+    )
     ObjectPaymentPlanInstalmentFactory(object_payment_plan=obj)
-    ObjectPaymentPlanInstalmentFactory()
+    ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
+    )
     assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
 
 
 @pytest.mark.django_db
 def test_outstanding_payment_plans_exclude_success():
-    ObjectPaymentPlanInstalmentFactory()
-    ObjectPaymentPlanInstalmentFactory(state=CheckoutState.objects.success)
+    ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
+    )
+    ObjectPaymentPlanInstalmentFactory(
+        state=CheckoutState.objects.success,
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
+    )
     assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
 
 
 @pytest.mark.django_db
 def test_outstanding_payment_plans_filter_two():
-    obj = ObjectPaymentPlanFactory()
+    obj = ObjectPaymentPlanFactory(content_object=ContactFactory())
     ObjectPaymentPlanInstalmentFactory(
         object_payment_plan=obj
     )
@@ -141,7 +161,16 @@ def test_outstanding_payment_plans_filter_two():
 
 @pytest.mark.django_db
 def test_report_card_expiry_dates():
-    ObjectPaymentPlanInstalmentFactory()
-    obj = ObjectPaymentPlanInstalmentFactory()
-    CustomerFactory(email=obj.object_payment_plan.content_object.checkout_email)
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
+    ObjectPaymentPlanInstalmentFactory(object_payment_plan=object_payment_plan)
+    obj = ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory()
+        ),
+    )
+    CustomerFactory(
+        email=obj.object_payment_plan.content_object.checkout_email
+    )
     ObjectPaymentPlan.objects.report_card_expiry_dates

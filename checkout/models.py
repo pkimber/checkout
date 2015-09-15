@@ -401,9 +401,19 @@ class CheckoutManager(models.Manager):
             checkout.charge(current_user)
             with transaction.atomic():
                 checkout.success()
+                #ChargeAudit.objects.create_charge_audit(
+                #    content_object,
+                #    current_user,
+                #    checkout,
+                #)
         except CheckoutError:
             with transaction.atomic():
                 checkout.fail()
+                #ChargeAudit.objects.create_charge_audit(
+                #    content_object,
+                #    current_user,
+                #    checkout,
+                #)
 
     def success(self):
         return self.audit().filter(state=CheckoutState.objects.success)
@@ -940,6 +950,15 @@ reversion.register(ObjectPaymentPlan)
 
 class ObjectPaymentPlanInstalmentManager(models.Manager):
 
+    #@property
+    #def checkout_list(self):
+    #    """All 'checkout' transactions for object payment plan instalments.
+    #    Use to audit checkout failures so we can block access.
+    #    """
+    #    return Checkout.objects.filter(
+    #        content_type=ContentType.objects.get_for_model(self.model),
+    #    )
+
     def create_object_payment_plan_instalment(
             self, object_payment_plan, count, deposit, amount, due):
         obj = self.model(
@@ -969,7 +988,6 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
             object_payment_plan__deleted=True,
         )
 
-    @property
     def process_payments(self):
         """Process pending payments.
 
@@ -979,6 +997,10 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
         we don't manage to set the state to 'success'.  In the code below, if
         the payment fails the record will be left in the 'request' state and
         so we won't ask for the money again.
+
+        # PJK This is already a background task!
+        # At the end of the method, we call the ``process_payment_results``
+        # background task so that projects can ....
 
         """
         pks = [o.pk for o in self.due]
@@ -996,6 +1018,9 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
                 instalment.save()
             # request payment
             Checkout.objects.charge(instalment, AnonymousUser())
+        #if pks:
+        #   process_payment_plan_instalment_charges.delay()
+
 
 
 class ObjectPaymentPlanInstalment(TimeStampedModel):
@@ -1006,8 +1031,6 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
 
     The instalment records are created after the deposit has been collected.
     Instalment records have the ``deposit`` field set to ``False``.
-
-    PJK TODO Why does the ``due`` date allow ``blank``/``null``?
 
     """
 
@@ -1087,6 +1110,7 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
         """
         self.state = CheckoutState.objects.fail
         self.save()
+        self.object_payment_plan.content_object.checkout_fail(due=self.due)
 
     def checkout_fail_url(self, checkout_pk):
         """No UI, so no URL."""
@@ -1104,6 +1128,7 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
         """
         self.state = CheckoutState.objects.success
         self.save()
+        self.object_payment_plan.content_object.checkout_success()
 
     def checkout_success_url(self, checkout_pk):
         """No UI, so no URL."""
@@ -1144,3 +1169,22 @@ class CheckoutSettings(SingletonModel):
         )
 
 reversion.register(CheckoutSettings)
+
+
+#class ObjectPaymentPlanInstalmentCheckoutAudit(TimeStampedModel):
+#    """Keep an audit of checkout status."""
+#
+#    object_payment_plan_instalment = models.ForeignKey(
+#        ObjectPaymentPlanInstalment
+#    )
+#    state = models.ForeignKey(
+#        CheckoutState,
+#        default=default_checkout_state,
+#        #blank=True, null=True
+#    )
+#
+#                ChargeAudit.objects.create_charge_audit(
+#                    content_object,
+#                    current_user,
+#                    checkout,
+#                )

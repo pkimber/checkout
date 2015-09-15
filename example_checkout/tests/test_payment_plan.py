@@ -2,8 +2,11 @@
 import pytest
 
 from checkout.models import CheckoutError
-from checkout.tests.factories import PaymentPlanFactory
-from example_checkout.tests.factories import ObjectPaymentPlanFactory
+from checkout.tests.factories import (
+    ObjectPaymentPlanFactory,
+    PaymentPlanFactory,
+)
+from .factories import ContactFactory
 
 
 @pytest.mark.django_db
@@ -18,7 +21,10 @@ def test_save():
 @pytest.mark.django_db
 def test_save_in_use():
     obj = PaymentPlanFactory()
-    ObjectPaymentPlanFactory(payment_plan=obj)
+    ObjectPaymentPlanFactory(
+        payment_plan=obj,
+        content_object=ContactFactory(),
+    )
     obj.name = 'Another Name'
     with pytest.raises(CheckoutError) as e:
         obj.save()
@@ -27,7 +33,10 @@ def test_save_in_use():
 
 @pytest.mark.django_db
 def test_save_not_in_use():
-    ObjectPaymentPlanFactory(payment_plan=PaymentPlanFactory())
+    ObjectPaymentPlanFactory(
+        payment_plan=PaymentPlanFactory(),
+        content_object=ContactFactory(),
+    )
     obj = PaymentPlanFactory()
     obj.name = 'Another Name'
     obj.save()

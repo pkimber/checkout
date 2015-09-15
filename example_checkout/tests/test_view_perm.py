@@ -3,7 +3,11 @@ from django.core.urlresolvers import reverse
 
 from base.tests.test_utils import PermTestCase
 
-from .factories import ObjectPaymentPlanInstalmentFactory
+from checkout.tests.factories import (
+    ObjectPaymentPlanFactory,
+    ObjectPaymentPlanInstalmentFactory,
+)
+from .factories import ContactFactory
 
 
 class TestViewPerm(PermTestCase):
@@ -18,13 +22,21 @@ class TestViewPerm(PermTestCase):
         self.assert_staff_only(reverse('checkout.list.audit'))
 
     def test_object_payment_plan_delete(self):
-        obj = ObjectPaymentPlanInstalmentFactory()
+        obj = ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=ObjectPaymentPlanFactory(
+                content_object=ContactFactory(),
+            ),
+        )
         self.assert_staff_only(
             reverse('checkout.object.payment.plan.delete', args=[obj.pk])
         )
 
     def test_object_payment_plan_instalment(self):
-        obj = ObjectPaymentPlanInstalmentFactory()
+        obj = ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=ObjectPaymentPlanFactory(
+                content_object=ContactFactory(),
+            ),
+        )
         self.assert_staff_only(
             reverse('checkout.object.payment.plan.instalment', args=[obj.pk])
         )

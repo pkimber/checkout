@@ -8,28 +8,36 @@ from decimal import Decimal
 from django.db import transaction
 
 from checkout.models import (
+    CheckoutAction,
     CheckoutState,
     ObjectPaymentPlan,
     ObjectPaymentPlanInstalment,
 )
 from checkout.tests.factories import (
+    CheckoutFactory,
     CustomerFactory,
+    ObjectPaymentPlanFactory,
+    ObjectPaymentPlanInstalmentFactory,
     PaymentPlanFactory,
 )
 from checkout.tests.helper import check_checkout
+from example_checkout.tests.factories import SalesLedgerFactory
 from login.tests.factories import UserFactory
 from .factories import (
     ContactFactory,
-    ObjectPaymentPlanFactory,
-    ObjectPaymentPlanInstalmentFactory,
+    SalesLedgerFactory,
 )
 
 
 @pytest.mark.django_db
 def test_can_charge_deposit():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
         deposit=True,
         due=date.today(),
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.pending
     )
     assert obj.checkout_can_charge
@@ -37,9 +45,13 @@ def test_can_charge_deposit():
 
 @pytest.mark.django_db
 def test_can_charge_deposit_not_pending():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
         deposit=True,
         due=date.today(),
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.request
     )
     assert not obj.checkout_can_charge
@@ -47,8 +59,12 @@ def test_can_charge_deposit_not_pending():
 
 @pytest.mark.django_db
 def test_can_charge_due():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
         due=date.today(),
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.request
     )
     assert obj.checkout_can_charge
@@ -56,8 +72,12 @@ def test_can_charge_due():
 
 @pytest.mark.django_db
 def test_can_charge_overdue():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
         due=date.today()+relativedelta(days=-10),
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.request
     )
     assert obj.checkout_can_charge
@@ -65,8 +85,12 @@ def test_can_charge_overdue():
 
 @pytest.mark.django_db
 def test_can_charge_due_not_yet():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
         due=date.today()+relativedelta(days=10),
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.request
     )
     assert not obj.checkout_can_charge
@@ -74,7 +98,11 @@ def test_can_charge_due_not_yet():
 
 @pytest.mark.django_db
 def test_can_charge_fail():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.fail
     )
     assert not obj.checkout_can_charge
@@ -82,8 +110,12 @@ def test_can_charge_fail():
 
 @pytest.mark.django_db
 def test_can_charge_not_deposit():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
         due=date.today(),
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.pending
     )
     assert not obj.checkout_can_charge
@@ -91,7 +123,11 @@ def test_can_charge_not_deposit():
 
 @pytest.mark.django_db
 def test_can_charge_pending():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.pending
     )
     assert not obj.checkout_can_charge
@@ -99,7 +135,11 @@ def test_can_charge_pending():
 
 @pytest.mark.django_db
 def test_can_charge_request():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.request
     )
     assert obj.checkout_can_charge
@@ -107,7 +147,11 @@ def test_can_charge_request():
 
 @pytest.mark.django_db
 def test_can_charge_success():
+    object_payment_plan = ObjectPaymentPlanFactory(
+        content_object=ContactFactory()
+    )
     obj = ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=object_payment_plan,
         state=CheckoutState.objects.success
     )
     assert not obj.checkout_can_charge
@@ -248,18 +292,53 @@ def test_checkout_email():
     assert 'me@test.com' == obj.checkout_email
 
 
+#@pytest.mark.django_db
+#def test_checkout_list():
+#    c1 = CheckoutFactory(
+#        action=CheckoutAction.objects.charge,
+#        content_object=SalesLedgerFactory(),
+#    )
+#    c2 = CheckoutFactory(
+#        action=CheckoutAction.objects.charge,
+#        content_object=ObjectPaymentPlanInstalmentFactory(
+#            object_payment_plan=ObjectPaymentPlanFactory(
+#                content_object=ContactFactory(),
+#            ),
+#        ),
+#    )
+#    c3 = CheckoutFactory(
+#        action=CheckoutAction.objects.charge,
+#        content_object=ObjectPaymentPlanInstalmentFactory(
+#            object_payment_plan=ObjectPaymentPlanFactory(
+#                content_object=ContactFactory(),
+#            ),
+#        ),
+#    )
+#    checkout_list = ObjectPaymentPlanInstalment.objects.checkout_list
+#    assert 2 == checkout_list.count()
+#    assert c1 not in checkout_list
+#    assert c2 in checkout_list
+#    assert c3 in checkout_list
+
+
 @pytest.mark.django_db
 def test_due():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
         count=1,
         due=today+relativedelta(days=-1),
-        amount=Decimal('1')
+        amount=Decimal('1'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     ObjectPaymentPlanInstalmentFactory(
         count=2,
         due=today+relativedelta(days=-2),
-        amount=Decimal('2')
+        amount=Decimal('2'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
     assert [Decimal('1'), Decimal('2')] == result
@@ -270,17 +349,26 @@ def test_due_plan_deleted():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-1),
-        amount=Decimal('1')
+        amount=Decimal('1'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
-    object_payment_plan = ObjectPaymentPlanFactory(deleted=True)
+    object_payment_plan = ObjectPaymentPlanFactory(
+        deleted=True,
+        content_object=ContactFactory(),
+    )
     ObjectPaymentPlanInstalmentFactory(
         object_payment_plan=object_payment_plan,
         due=today+relativedelta(days=2),
-        amount=Decimal('2')
+        amount=Decimal('2'),
     )
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-3),
-        amount=Decimal('3')
+        amount=Decimal('3'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
     assert [Decimal('1'), Decimal('3')] == result
@@ -291,16 +379,25 @@ def test_due_plan_deposit():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-1),
-        amount=Decimal('1')
+        amount=Decimal('1'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     ObjectPaymentPlanInstalmentFactory(
         deposit=True,
         due=today+relativedelta(days=-2),
-        amount=Decimal('2')
+        amount=Decimal('2'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-3),
-        amount=Decimal('3')
+        amount=Decimal('3'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
     assert [Decimal('1'), Decimal('3')] == result
@@ -311,15 +408,24 @@ def test_due_not_due():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-1),
-        amount=Decimal('1')
+        amount=Decimal('1'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=1),
-        amount=Decimal('2')
+        amount=Decimal('2'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-3),
-        amount=Decimal('3')
+        amount=Decimal('3'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
     assert [Decimal('1'), Decimal('3')] == result
@@ -330,16 +436,25 @@ def test_due_not_pending():
     today = date.today()
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-1),
-        amount=Decimal('1')
+        amount=Decimal('1'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-2),
         state=CheckoutState.objects.fail,
-        amount=Decimal('2')
+        amount=Decimal('2'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-3),
-        amount=Decimal('3')
+        amount=Decimal('3'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     result = [p.amount for p in ObjectPaymentPlanInstalment.objects.due]
     assert [Decimal('1'), Decimal('3')] == result
@@ -347,11 +462,11 @@ def test_due_not_pending():
 
 @pytest.mark.django_db
 def test_factory():
-    ObjectPaymentPlanInstalmentFactory()
-
-
-
-
+    ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
+    )
 
 
 @pytest.mark.django_db
@@ -361,6 +476,9 @@ def test_create_instalments_first_of_month():
         count=1,
         deposit=True,
         due=date(2015, 3, 10),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     obj.object_payment_plan.create_instalments()
     assert date(2015, 3, 10) == ObjectPaymentPlanInstalment.objects.get(
@@ -381,6 +499,9 @@ def test_create_instalments_first_of_month_after_15th():
         count=1,
         deposit=True,
         due=date(2015, 3, 17),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     obj.object_payment_plan.create_instalments()
     assert date(2015, 3, 17) == ObjectPaymentPlanInstalment.objects.get(
@@ -392,17 +513,6 @@ def test_create_instalments_first_of_month_after_15th():
     assert date(2015, 6, 1) == ObjectPaymentPlanInstalment.objects.get(
         count=3
     ).due
-
-
-
-
-
-
-
-
-
-
-
 
 
 @pytest.mark.django_db
@@ -418,15 +528,24 @@ def test_process_payments(mocker):
     today = date.today()
     install_1 = ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=1),
-        amount=Decimal('2')
+        amount=Decimal('2'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     install_2 = ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-1),
-        amount=Decimal('1')
+        amount=Decimal('1'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     install_3 = ObjectPaymentPlanInstalmentFactory(
         due=today+relativedelta(days=-2),
-        amount=Decimal('2')
+        amount=Decimal('2'),
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
     )
     CustomerFactory(
         email=install_2.object_payment_plan.content_object.checkout_email
@@ -434,7 +553,7 @@ def test_process_payments(mocker):
     CustomerFactory(
         email=install_3.object_payment_plan.content_object.checkout_email
     )
-    ObjectPaymentPlanInstalment.objects.process_payments
+    ObjectPaymentPlanInstalment.objects.process_payments()
     # check
     install_1.refresh_from_db()
     assert install_1.state == CheckoutState.objects.pending
@@ -446,4 +565,8 @@ def test_process_payments(mocker):
 
 @pytest.mark.django_db
 def test_str():
-    str(ObjectPaymentPlanInstalmentFactory())
+    str(ObjectPaymentPlanInstalmentFactory(
+        object_payment_plan=ObjectPaymentPlanFactory(
+            content_object=ContactFactory(),
+        ),
+    ))
