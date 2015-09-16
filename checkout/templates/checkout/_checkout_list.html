@@ -45,7 +45,7 @@
         </td>
         <td align="right">
           {% if o.total %}
-            {% if o.is_payment_plan %}
+            {% if o.is_payment_plan or o.is_manual %}
               <small>
                 ({{ o.total }})
               </small>
@@ -66,6 +66,8 @@
             <i class="fa fa-warning"></i>
           {% endif %}
           {{ o.state.name }}
+          <br />
+          <small>{{ o.user.username }}</small>
         </td>
       </tr>
     {% endfor %}

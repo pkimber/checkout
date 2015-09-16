@@ -12,6 +12,7 @@ from .views import (
     ObjectPaymentPlanCardExpiryListView,
     ObjectPaymentPlanDeleteView,
     ObjectPaymentPlanInstalmentDetailView,
+    ObjectPaymentPlanInstalmentPaidUpdateView,
     ObjectPaymentPlanListView,
     PaymentPlanCreateView,
     PaymentPlanDeleteView,
@@ -49,6 +50,10 @@ urlpatterns = patterns(
     url(regex=r'^object/payment/plan/instalment/(?P<pk>\d+)/$',
         view=ObjectPaymentPlanInstalmentDetailView.as_view(),
         name='checkout.object.payment.plan.instalment'
+        ),
+    url(regex=r'^object/payment/plan/instalment/(?P<pk>\d+)/paid/$',
+        view=ObjectPaymentPlanInstalmentPaidUpdateView.as_view(),
+        name='checkout.object.payment.plan.instalment.paid'
         ),
     #url(regex=r'^object/payment/plan/instalment/(?P<pk>\d+)/charge/$',
     #    view=ObjectPaymentPlanInstalmentChargeUpdateView.as_view(),

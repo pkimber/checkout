@@ -1,11 +1,11 @@
 {% extends 'dash/base.html' %}
 
 {% block sub_title %}
-  Instalment - Charge Card
+  Instalment - Mark as Paid
 {% endblock sub_title %}
 
 {% block sub_heading %}
-  Instalment - Charge Card
+  Instalment - Mark as Paid
 {% endblock sub_heading %}
 
 {% block content %}
@@ -13,7 +13,7 @@
     <div class="pure-u-1">
       <div class="l-box">
         {% include 'checkout/_object_payment_plan_instalment.html' %}
-        {% include '_form.html' with submit='Charge Card' %}
+        {% include '_form.html' with submit='Mark as Paid' %}
       </div>
     </div>
   </div>

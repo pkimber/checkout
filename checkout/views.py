@@ -5,6 +5,7 @@ import logging
 from datetime import date
 
 from django.conf import settings
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db import transaction
@@ -27,6 +28,7 @@ from mail.tasks import process_mail
 
 from .forms import (
     ObjectPaymentPlanEmptyForm,
+    ObjectPaymentPlanInstalmentEmptyForm,
     PaymentPlanEmptyForm,
     PaymentPlanForm,
 )
@@ -285,6 +287,11 @@ class ObjectPaymentPlanListView(
     model = ObjectPaymentPlan
     paginate_by = 10
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(dict(allow_manual_payment=True))
+        return context
+
     def get_queryset(self):
         return ObjectPaymentPlan.objects.outstanding_payment_plans
 
@@ -304,6 +311,27 @@ class ObjectPaymentPlanInstalmentDetailView(
         StaffuserRequiredMixin, LoginRequiredMixin, BaseMixin, DetailView):
 
     model = ObjectPaymentPlanInstalment
+
+
+class ObjectPaymentPlanInstalmentPaidUpdateView(
+        StaffuserRequiredMixin, LoginRequiredMixin, BaseMixin, UpdateView):
+    """Mark this instalment as paid."""
+
+    model = ObjectPaymentPlanInstalment
+    form_class = ObjectPaymentPlanInstalmentEmptyForm
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            Checkout.objects.manual(self.object, self.request.user)
+            if self.object.deposit:
+                self.object.object_payment_plan.create_instalments()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            'checkout.object.payment.plan.instalment',
+            args=[self.object.pk]
+        )
 
 
 #class ObjectPaymentPlanInstalmentChargeUpdateView(

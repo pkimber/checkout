@@ -11,14 +11,12 @@
       final
     {% endif %}
     ({{ item.state.name }})
-    <!--
-    {# if item.checkout_can_charge #}
-      <a href="{# url 'checkout.object.payment.plan.instalment.charge' item.pk #}">
-        <i class="fa fa-credit-card"></i>
-        Charge now...
+    {% if allow_manual_payment and not item.state.is_success %}
+      <a href="{% url 'checkout.object.payment.plan.instalment.paid' item.pk %}">
+        <i class="fa fa-shopping-cart"></i>
+        Paid
       </a>
-    {# endif #}
-    -->
+    {% endif %}
     <br />
   {% endfor %}
 </small>

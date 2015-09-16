@@ -33,6 +33,7 @@ def default_state(apps, schema_editor):
     _init_state_action(model, 'Card Refresh', 'card_refresh', False)
     _init_state_action(model, 'Charge', 'charge', True)
     _init_state_action(model, 'Invoice', 'invoice', False)
+    _init_state_action(model, 'Manual', 'manual', False)
     _init_state_action(model, 'Payment', 'payment', True)
     _init_state_action(model, 'Payment Plan', 'payment_plan', False)
 

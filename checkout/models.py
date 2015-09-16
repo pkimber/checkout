@@ -122,6 +122,10 @@ class CheckoutState(TimeStampedModel):
         return '{}'.format(self.name)
 
     @property
+    def is_success(self):
+        return self.slug == self.SUCCESS
+
+    @property
     def is_pending(self):
         return self.slug == self.PENDING
 
@@ -143,6 +147,10 @@ class CheckoutActionManager(models.Manager):
         return self.model.objects.get(slug=self.model.INVOICE)
 
     @property
+    def manual(self):
+        return self.model.objects.get(slug=self.model.MANUAL)
+
+    @property
     def payment(self):
         return self.model.objects.get(slug=self.model.PAYMENT)
 
@@ -156,6 +164,7 @@ class CheckoutAction(TimeStampedModel):
     CARD_REFRESH = 'card_refresh'
     CHARGE = 'charge'
     INVOICE = 'invoice'
+    MANUAL = 'manual'
     PAYMENT = 'payment'
     PAYMENT_PLAN = 'payment_plan'
 
@@ -369,7 +378,9 @@ class CheckoutManager(models.Manager):
     def charge(self, content_object, current_user):
         """Collect some money from a customer.
 
-        You must be a member of staff to use this method.
+        You must be a member of staff to use this method.  For payment plans,
+        a background process will charge the card.  In this case, the user will
+        be anonymous.
 
         We should only attempt to collect money if the customer has already
         entered their card details.
@@ -400,19 +411,41 @@ class CheckoutManager(models.Manager):
             checkout.charge(current_user)
             with transaction.atomic():
                 checkout.success()
-                #ChargeAudit.objects.create_charge_audit(
-                #    content_object,
-                #    current_user,
-                #    checkout,
-                #)
         except CheckoutError:
             with transaction.atomic():
                 checkout.fail()
-                #ChargeAudit.objects.create_charge_audit(
-                #    content_object,
-                #    current_user,
-                #    checkout,
-                #)
+
+    def manual(self, content_object, current_user):
+        """Mark a transaction as paid (manual).
+
+        You must be a member of staff to use this method.
+
+        """
+        content_object.refresh_from_db()
+        if not current_user.is_staff:
+            raise CheckoutError(
+                'Only a member of staff can mark this transaction as paid.'
+            )
+        valid_state = (
+            CheckoutState.FAIL,
+            CheckoutState.PENDING,
+            CheckoutState.REQUEST,
+        )
+        if not content_object.state.slug in valid_state:
+            raise CheckoutError('Cannot mark this transaction as paid.')
+        action = CheckoutAction.objects.manual
+        checkout = self.create_checkout(
+            action,
+            content_object,
+            current_user
+        )
+        checkout.save()
+        try:
+            with transaction.atomic():
+                checkout.success()
+        except CheckoutError:
+            with transaction.atomic():
+                checkout.fail()
 
     def success(self):
         return self.audit().filter(state=CheckoutState.objects.success)
@@ -575,6 +608,10 @@ class Checkout(TimeStampedModel):
     @property
     def is_invoice(self):
         return self.action == CheckoutAction.objects.invoice
+
+    @property
+    def is_manual(self):
+        return self.action == CheckoutAction.objects.manual
 
     @property
     def is_payment(self):

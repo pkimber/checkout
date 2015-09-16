@@ -49,6 +49,18 @@ class TestViewPerm(PermTestCase):
     #        )
     #    )
 
+    def test_object_payment_plan_instalment_paid(self):
+        obj = ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=ObjectPaymentPlanFactory(
+                content_object=ContactFactory(),
+            ),
+        )
+        self.assert_staff_only(
+            reverse('checkout.object.payment.plan.instalment.paid',
+            args=[obj.pk]
+            )
+        )
+
     def test_object_payment_plan_card_expiry_list(self):
         self.assert_staff_only(
             reverse('checkout.object.payment.plan.card.expiry.list')
