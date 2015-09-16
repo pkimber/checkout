@@ -60,10 +60,26 @@ def test_create_object_payment_plan():
     result = [
         (p.count, p.amount, p.due) for p in object_payment_plan.payments
     ]
+    offset = 0
+    # instalments start a month later if after the 15th of the month
+    if date.today().day > 15:
+        offset = 1
     assert [
-        (1, Decimal('20'), date.today()),
-        (2, Decimal('40'), date.today() + relativedelta(months=+1, day=1)),
-        (3, Decimal('40'), date.today() + relativedelta(months=+2, day=1)),
+        (
+            1,
+            Decimal('20'),
+            date.today()
+        ),
+        (
+            2,
+            Decimal('40'),
+            date.today() + relativedelta(months=+(1+offset), day=1)
+        ),
+        (
+            3,
+            Decimal('40'),
+            date.today() + relativedelta(months=+(2+offset), day=1)
+        ),
     ] == result
 
 
