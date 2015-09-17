@@ -4,10 +4,12 @@ import pytest
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
+from unittest import mock
 
 from django.db import transaction
 
 from checkout.models import (
+    CheckoutError,
     CheckoutState,
     ObjectPaymentPlan,
     ObjectPaymentPlanInstalment,
@@ -20,6 +22,8 @@ from checkout.tests.factories import (
 )
 from checkout.tests.helper import check_checkout
 from login.tests.factories import UserFactory
+from mail.models import Message
+from mail.tests.factories import NotifyFactory
 from .factories import ContactFactory
 
 
@@ -511,12 +515,7 @@ def test_create_instalments_first_of_month_after_15th():
 
 @pytest.mark.django_db
 def test_process_payments(mocker):
-    """Process payments.
-
-    I cannot get this to run as a test because I don't know how to create a
-    test Stripe customer.
-
-    """
+    """Process payments."""
     mocker.patch('stripe.Charge.create')
     mocker.patch('stripe.Customer.create')
     today = date.today()
@@ -555,6 +554,31 @@ def test_process_payments(mocker):
     assert install_2.state == CheckoutState.objects.success
     install_3.refresh_from_db()
     assert install_3.state == CheckoutState.objects.success
+
+
+@pytest.mark.django_db
+def test_process_payments_fail(mocker):
+    """Process payments."""
+    with mock.patch('stripe.Customer.create') as mock_customer:
+        mock_customer.side_effect = CheckoutError('Mock')
+        today = date.today()
+        install = ObjectPaymentPlanInstalmentFactory(
+            due=today+relativedelta(days=-1),
+            amount=Decimal('1'),
+            object_payment_plan=ObjectPaymentPlanFactory(
+                content_object=ContactFactory(),
+            ),
+        )
+        CustomerFactory(
+            email=install.object_payment_plan.content_object.checkout_email
+        )
+        NotifyFactory()
+        ObjectPaymentPlanInstalment.objects.process_payments()
+        # check
+        install.refresh_from_db()
+        assert install.state == CheckoutState.objects.fail
+        assert 1 == Message.objects.count()
+        assert 'FAIL' in Message.objects.first().subject
 
 
 @pytest.mark.django_db

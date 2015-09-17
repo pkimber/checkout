@@ -414,6 +414,7 @@ class CheckoutManager(models.Manager):
         except CheckoutError:
             with transaction.atomic():
                 checkout.fail()
+                checkout.notify()
 
     def manual(self, content_object, current_user):
         """Mark a transaction as paid (manual).
@@ -622,23 +623,32 @@ class Checkout(TimeStampedModel):
         """Used in success templates."""
         return self.action == CheckoutAction.objects.payment_plan
 
-    def notify(self, request):
+    def notify(self, request=None):
+        """Send notification of checkout status.
+
+        Pass in a 'request' if you want the email to contain the URL of the
+        checkout transaction.
+
+        """
         email_addresses = [n.email for n in Notify.objects.all()]
         if email_addresses:
             caption = self.action.name
-            subject = '{} from {}'.format(
+            state = self.state.name
+            subject = '{} - {} from {}'.format(
+                state.upper(),
                 caption.capitalize(),
                 self.content_object.checkout_name,
             )
-            message = '{} - {} from {}, {}:'.format(
+            message = '{} - {} - {} from {}, {}:'.format(
                 self.created.strftime('%d/%m/%Y %H:%M'),
+                state.upper(),
                 caption,
                 self.content_object.checkout_name,
                 self.content_object.checkout_email,
             )
             message = message + '\n\n{}\n\n{}'.format(
                 self.description,
-                request.build_absolute_uri(self.content_object_url),
+                request.build_absolute_uri(self.content_object_url) if request else '',
             )
             queue_mail_message(
                 self,
@@ -1031,10 +1041,6 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
         the payment fails the record will be left in the 'request' state and
         so we won't ask for the money again.
 
-        # PJK This is already a background task!
-        # At the end of the method, we call the ``process_payment_results``
-        # background task so that projects can ....
-
         """
         pks = [o.pk for o in self.due]
         for pk in pks:
@@ -1051,9 +1057,6 @@ class ObjectPaymentPlanInstalmentManager(models.Manager):
                 instalment.save()
             # request payment
             Checkout.objects.charge(instalment, AnonymousUser())
-        #if pks:
-        #   process_payment_plan_instalment_charges.delay()
-
 
 
 class ObjectPaymentPlanInstalment(TimeStampedModel):
