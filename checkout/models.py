@@ -952,7 +952,6 @@ class ObjectPaymentPlan(TimeStampedModel):
         deposit_due_date = self._check_create_instalments
         instalments = self.payment_plan.instalments(
             deposit_due_date,
-
             self.total
         )
         count = 1
@@ -970,8 +969,6 @@ class ObjectPaymentPlan(TimeStampedModel):
         self._check_create_instalments
         deposit = self.objectpaymentplaninstalment_set.first()
         Checkout.objects.charge(deposit, user)
-        with transaction.atomic():
-            self.create_instalments()
 
     @property
     def payment_count(self):
@@ -1164,6 +1161,8 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
         """
         self.state = CheckoutState.objects.success
         self.save()
+        if self.deposit:
+            self.object_payment_plan.create_instalments()
         self.object_payment_plan.content_object.checkout_success()
 
     def checkout_success_url(self, checkout_pk):

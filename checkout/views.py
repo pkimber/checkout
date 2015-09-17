@@ -321,10 +321,7 @@ class ObjectPaymentPlanInstalmentPaidUpdateView(
     form_class = ObjectPaymentPlanInstalmentEmptyForm
 
     def form_valid(self, form):
-        with transaction.atomic():
-            Checkout.objects.manual(self.object, self.request.user)
-            if self.object.deposit:
-                self.object.object_payment_plan.create_instalments()
+        Checkout.objects.manual(self.object, self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
