@@ -665,7 +665,7 @@ class Checkout(TimeStampedModel):
     def success(self):
         """Checkout successful - so update and notify admin."""
         self._success_or_fail(CheckoutState.objects.success)
-        return self.content_object.checkout_success()
+        return self.content_object.checkout_success(self)
 
 reversion.register(Checkout)
 
@@ -1156,17 +1156,17 @@ class ObjectPaymentPlanInstalment(TimeStampedModel):
     def checkout_name(self):
         return self.object_payment_plan.content_object.checkout_name
 
-    def checkout_success(self):
+    def checkout_success(self, checkout):
         """Update the object to record the payment success.
 
         Called from within a transaction and you can update the model.
 
         """
-        self.state = CheckoutState.objects.success
+        self.state = checkout.state
         self.save()
         if self.deposit:
             self.object_payment_plan.create_instalments()
-        self.object_payment_plan.content_object.checkout_success()
+        self.object_payment_plan.content_object.checkout_success(checkout)
 
     def checkout_success_url(self, checkout_pk):
         """No UI, so no URL."""

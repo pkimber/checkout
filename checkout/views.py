@@ -5,7 +5,6 @@ import logging
 from datetime import date
 
 from django.conf import settings
-from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db import transaction
@@ -229,6 +228,7 @@ class CheckoutMixin(object):
                     self._form_valid_invoice(checkout, form)
                 checkout.success()
                 checkout.notify(self.request)
+                #self.object.checkout_mail(action)
             url = self.object.checkout_success_url(checkout.pk)
             process_mail.delay()
         except CheckoutError as e:
@@ -238,7 +238,7 @@ class CheckoutMixin(object):
                     checkout.fail()
             url = self.object.checkout_fail_url(checkout.pk)
             # PJK TODO remove temp
-            raise
+            # raise
         return HttpResponseRedirect(url)
 
 

@@ -10,11 +10,13 @@ from django.db import transaction
 
 from checkout.models import (
     CheckoutError,
+    CheckoutAction,
     CheckoutState,
     ObjectPaymentPlan,
     ObjectPaymentPlanInstalment,
 )
 from checkout.tests.factories import (
+    CheckoutFactory,
     CustomerFactory,
     ObjectPaymentPlanFactory,
     ObjectPaymentPlanInstalmentFactory,
@@ -246,7 +248,12 @@ def test_checkout_success():
         object_payment_plan=contact_pp
     )
     assert CheckoutState.objects.pending == obj.state
-    obj.checkout_success()
+    checkout = CheckoutFactory(
+        action=CheckoutAction.objects.charge,
+        content_object=obj,
+        state=CheckoutState.objects.success,
+    )
+    obj.checkout_success(checkout)
     assert CheckoutState.objects.success == obj.state
 
 

@@ -1,5 +1,10 @@
 # -*- encoding: utf-8 -*-
 from base.tests.model_maker import clean_and_save
+from checkout.models import (
+    CheckoutAction,
+    CheckoutState,
+)
+from checkout.tests.factories import CheckoutFactory
 
 
 def check_checkout(model_instance):
@@ -12,6 +17,8 @@ def check_checkout(model_instance):
     model_instance.checkout_email
     # @property ``list`` of strings
     model_instance.checkout_description
+    # method called on success, passing in the checkout action
+    # model_instance.checkout_mail(CheckoutAction.objects.payment)
     # @property the name of the person who is paying
     model_instance.checkout_name
     # @property the total payment
@@ -25,7 +32,13 @@ def check_checkout(model_instance):
     # Update the object to record the payment success.
     # Called from within a transaction so you can update the model.
     # Note: This method should update the ``model_instance`` AND ``save`` it.
-    model_instance.checkout_success()
+    # We pass in the 'checkout' so the model instance can send an email etc.
+    checkout = CheckoutFactory(
+        action=CheckoutAction.objects.payment,
+        content_object=model_instance,
+        state=CheckoutState.objects.success,
+    )
+    model_instance.checkout_success(checkout)
     # method returning a url
     model_instance.checkout_success_url(1)
     model_instance.get_absolute_url()

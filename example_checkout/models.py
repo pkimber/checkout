@@ -82,7 +82,7 @@ class SalesLedger(models.Model):
         """just for testing."""
         return reverse('checkout.list.audit')
 
-    def checkout_success(self):
+    def checkout_success(self, checkout):
         """Update the object to record the payment success.
 
         Called from within a transaction so you can update the model.
