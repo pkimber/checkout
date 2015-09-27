@@ -909,6 +909,8 @@ class ObjectPaymentPlanManager(models.Manager):
 class ObjectPaymentPlan(TimeStampedModel):
     """Payment plan for an object."""
 
+    MAIL_TEMPLATE_CARD_EXPIRY = 'payment_plan_card_expiry'
+
     # link to the object in the system which requested the payment plan
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
