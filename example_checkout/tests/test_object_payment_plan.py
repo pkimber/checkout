@@ -4,6 +4,7 @@ import pytest
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
+from unittest import mock
 
 from django.db import transaction
 
@@ -173,6 +174,68 @@ def test_outstanding_payment_plans_filter_two():
         due=date.today() + relativedelta(months=+1),
     )
     assert 1 == ObjectPaymentPlan.objects.outstanding_payment_plans.count()
+
+
+@pytest.mark.django_db
+def test_refresh_card_expiry_dates():
+    with mock.patch('stripe.Customer.retrieve') as mock_retrieve:
+        mock_retrieve.return_value = {
+            'default_card': '1234',
+            'cards': {
+                'data': [
+                    {
+                        'id': '1234',
+                        'exp_month': '8',
+                        'exp_year': '1986',
+                    },
+                ],
+            },
+        }
+        obj = ObjectPaymentPlanFactory(content_object=ContactFactory())
+        ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=obj
+        )
+        ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=obj,
+            due=date.today() + relativedelta(months=+1),
+        )
+        customer = CustomerFactory(
+            email=obj.content_object.checkout_email
+        )
+        ObjectPaymentPlan.objects.refresh_card_expiry_dates()
+        customer.refresh_from_db()
+        assert True == customer.refresh
+
+
+@pytest.mark.django_db
+def test_refresh_card_expiry_dates_future():
+    with mock.patch('stripe.Customer.retrieve') as mock_retrieve:
+        mock_retrieve.return_value = {
+            'default_card': '1234',
+            'cards': {
+                'data': [
+                    {
+                        'id': '1234',
+                        'exp_month': '8',
+                        'exp_year': '2050',
+                    },
+                ],
+            },
+        }
+        obj = ObjectPaymentPlanFactory(content_object=ContactFactory())
+        ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=obj
+        )
+        ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=obj,
+            due=date.today() + relativedelta(months=+1),
+        )
+        customer = CustomerFactory(
+            email=obj.content_object.checkout_email
+        )
+        ObjectPaymentPlan.objects.refresh_card_expiry_dates()
+        customer.refresh_from_db()
+        assert False == customer.refresh
 
 
 @pytest.mark.django_db
