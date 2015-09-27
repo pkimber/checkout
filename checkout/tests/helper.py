@@ -1,4 +1,6 @@
 # -*- encoding: utf-8 -*-
+from decimal import Decimal
+
 from base.tests.model_maker import clean_and_save
 from checkout.models import (
     CheckoutAction,
@@ -37,6 +39,7 @@ def check_checkout(model_instance):
         action=CheckoutAction.objects.payment,
         content_object=model_instance,
         state=CheckoutState.objects.success,
+        total=Decimal('123.45'),
     )
     model_instance.checkout_success(checkout)
     # method returning a url
