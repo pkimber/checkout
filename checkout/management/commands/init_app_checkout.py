@@ -16,7 +16,7 @@ class Command(BaseCommand):
             'Re: Payment Plan - Card Expiry',
             (
                 "You can add the following variables to the template:\n"
-                "{{ candidate }} name of the candidate\n"
+                "{{ name }} name of the candidate\n"
             ),
             False,
             settings.MAIL_TEMPLATE_TYPE,
