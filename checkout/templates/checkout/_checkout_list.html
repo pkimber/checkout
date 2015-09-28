@@ -67,7 +67,11 @@
           {% endif %}
           {{ o.state.name }}
           <br />
-          <small>{{ o.user.username }}</small>
+          <small>
+            {% if o.user %}
+              {{ o.user.username }}
+            {% endif %}
+          </small>
         </td>
       </tr>
     {% endfor %}
