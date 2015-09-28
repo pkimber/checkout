@@ -1,17 +1,7 @@
 Checkout
 ********
 
-Django application for an online payments.
-
-Copied from:
-https://github.com/pkimber/pay/tree/644-payment-plan-v2
-
-For notes:
-https://django-dev-and-deploy-using-salt.readthedocs.org/en/latest/app-pay.html
-and
-https://github.com/pkimber/docs/blob/master/source/app-pay.rst
-and
-https://github.com/pkimber/docs/blob/master/source/paypal.rst
+Django application for an online payments, payment plans and pay by invoice.
 
 Install
 =======
@@ -21,10 +11,9 @@ Virtual Environment
 
 ::
 
-  pyvenv-3.4 --without-pip venv-checkout
+  virtualenv --python=python3.4 venv-checkout
   source venv-checkout/bin/activate
-  wget https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py
-  python get-pip.py
+  pip install --upgrade pip
 
   pip install -r requirements/local.txt
 

@@ -22,4 +22,5 @@ pyyaml
 setuptools_scm
 walkdir
 # must come after ``setuptools_scm``
-pdbpp
+# does not work on greg's computer
+# pdbpp
