@@ -27,7 +27,10 @@ import stripe
 from base.model_utils import TimeStampedModel
 from base.singleton import SingletonModel
 from mail.models import Notify
-from mail.service import queue_mail_message
+from mail.service import (
+    queue_mail_message,
+    queue_mail_template,
+)
 
 
 CURRENCY = 'GBP'
@@ -294,9 +297,20 @@ class CustomerManager(models.Manager):
                     months=+1, day=1, days=-1
                 )
                 # is the card expiring soon?
-                obj.refresh = obj.is_expiring
-                # save the details
-                obj.save()
+                is_expiring = obj.is_expiring
+                if obj.refresh == is_expiring:
+                    pass
+                else:
+                    with transaction.atomic():
+                        obj.refresh = is_expiring
+                        # save the details
+                        obj.save()
+                        # email the customer
+                        queue_mail_template(
+                            obj,
+                            self.model.MAIL_TEMPLATE_CARD_EXPIRY,
+                            {obj.email: dict(name=obj.name)}
+                        )
         except Customer.DoesNotExist:
             pass
 
@@ -312,6 +326,8 @@ class Customer(TimeStampedModel):
     if you need to diagnose an issue.
 
     """
+
+    MAIL_TEMPLATE_CARD_EXPIRY = 'customer_card_expiry'
 
     name = models.TextField()
     email = models.EmailField(unique=True)
@@ -909,7 +925,6 @@ class ObjectPaymentPlanManager(models.Manager):
 class ObjectPaymentPlan(TimeStampedModel):
     """Payment plan for an object."""
 
-    MAIL_TEMPLATE_CARD_EXPIRY = 'payment_plan_card_expiry'
 
     # link to the object in the system which requested the payment plan
     content_type = models.ForeignKey(ContentType)

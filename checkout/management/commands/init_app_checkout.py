@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from checkout.models import ObjectPaymentPlan
+from checkout.models import Customer
 from mail.models import MailTemplate
 
 
@@ -12,15 +12,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         MailTemplate.objects.init_mail_template(
-            ObjectPaymentPlan.MAIL_TEMPLATE_CARD_EXPIRY,
-            'Re: Payment Plan - Card Expiry',
+            Customer.MAIL_TEMPLATE_CARD_EXPIRY,
+            'Re: Card Expiry',
             (
                 "You can add the following variables to the template:\n"
-                "{{ name }} name of the candidate\n"
+                "{{ name }} name of the customer\n"
             ),
             False,
             settings.MAIL_TEMPLATE_TYPE,
-            subject='Payment Plan - Card Expiry',
+            subject='Card Expiry',
             description="Your card will expire soon...",
         )
         print("Initialised 'checkout' app...")

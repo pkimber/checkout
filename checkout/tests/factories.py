@@ -26,6 +26,10 @@ class CustomerFactory(factory.django.DjangoModelFactory):
     def email(n):
         return '{:02d}@pkimber.net'.format(n)
 
+    @factory.sequence
+    def name(n):
+        return '{:02d}_name'.format(n)
+
 
 class CheckoutFactory(factory.django.DjangoModelFactory):
 

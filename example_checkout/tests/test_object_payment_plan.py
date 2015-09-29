@@ -11,6 +11,7 @@ from django.db import transaction
 from checkout.models import (
     CheckoutError,
     CheckoutState,
+    Customer,
     ObjectPaymentPlan
 )
 from checkout.tests.factories import (
@@ -19,6 +20,8 @@ from checkout.tests.factories import (
     ObjectPaymentPlanInstalmentFactory,
     PaymentPlanFactory,
 )
+from mail.models import Message
+from mail.tests.factories import MailTemplateFactory
 from .factories import ContactFactory
 
 
@@ -178,6 +181,7 @@ def test_outstanding_payment_plans_filter_two():
 
 @pytest.mark.django_db
 def test_refresh_card_expiry_dates():
+    MailTemplateFactory(slug=Customer.MAIL_TEMPLATE_CARD_EXPIRY)
     with mock.patch('stripe.Customer.retrieve') as mock_retrieve:
         mock_retrieve.return_value = {
             'default_card': '1234',
@@ -205,6 +209,15 @@ def test_refresh_card_expiry_dates():
         ObjectPaymentPlan.objects.refresh_card_expiry_dates()
         customer.refresh_from_db()
         assert True == customer.refresh
+        # check email template context
+        assert 1 == Message.objects.count()
+        message = Message.objects.first()
+        assert 1 == message.mail_set.count()
+        mail = message.mail_set.first()
+        assert 1 == mail.mailfield_set.count()
+        assert {
+            'name': customer.name,
+        } == {f.key: f.value for f in mail.mailfield_set.all()}
 
 
 @pytest.mark.django_db
@@ -236,6 +249,43 @@ def test_refresh_card_expiry_dates_future():
         ObjectPaymentPlan.objects.refresh_card_expiry_dates()
         customer.refresh_from_db()
         assert False == customer.refresh
+        # check we didn't send a notification email
+        assert 0 == Message.objects.count()
+
+
+@pytest.mark.django_db
+def test_refresh_card_expiry_dates_refreshed():
+    """Customer card already marked for 'refresh', so don't send an email."""
+    with mock.patch('stripe.Customer.retrieve') as mock_retrieve:
+        mock_retrieve.return_value = {
+            'default_card': '1234',
+            'cards': {
+                'data': [
+                    {
+                        'id': '1234',
+                        'exp_month': '8',
+                        'exp_year': '1986',
+                    },
+                ],
+            },
+        }
+        obj = ObjectPaymentPlanFactory(content_object=ContactFactory())
+        ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=obj
+        )
+        ObjectPaymentPlanInstalmentFactory(
+            object_payment_plan=obj,
+            due=date.today() + relativedelta(months=+1),
+        )
+        customer = CustomerFactory(
+            email=obj.content_object.checkout_email,
+            refresh=True,
+        )
+        ObjectPaymentPlan.objects.refresh_card_expiry_dates()
+        customer.refresh_from_db()
+        assert True == customer.refresh
+        # check we didn't send a notification email
+        assert 0 == Message.objects.count()
 
 
 @pytest.mark.django_db
