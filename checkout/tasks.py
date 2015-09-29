@@ -12,3 +12,9 @@ logger = logging.getLogger(__name__)
 def process_payments():
     logger.info('process_payments')
     ObjectPaymentPlanInstalment.objects.process_payments()
+
+
+@task()
+def refresh_card_expiry_dates():
+    logger.info('refresh_card_expiry_dates')
+    ObjectPaymentPlan.objects.refresh_card_expiry_dates()
