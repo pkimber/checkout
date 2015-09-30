@@ -36,7 +36,7 @@ from .models import (
     Checkout,
     CheckoutAction,
     CheckoutError,
-    CheckoutInvoice,
+    CheckoutAdditional,
     CheckoutSettings,
     CURRENCY,
     Customer,
@@ -158,7 +158,7 @@ class CheckoutMixin(object):
 
     def _form_valid_invoice(self, checkout, form):
         data = form.invoice_data()
-        CheckoutInvoice.objects.create_checkout_invoice(checkout, **data)
+        CheckoutAdditional.objects.create_checkout_Additional(checkout, **data)
 
     def _form_valid_stripe(self, checkout, token):
         customer = Customer.objects.init_customer(self.object, token)

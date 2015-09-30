@@ -4,7 +4,7 @@ import pytest
 from checkout.models import CheckoutAction
 from checkout.tests.factories import (
     CheckoutFactory,
-    CheckoutInvoiceFactory,
+    CheckoutAdditionalFactory,
 )
 from example_checkout.tests.factories import SalesLedgerFactory
 
@@ -15,7 +15,7 @@ def test_invoice_data():
         action=CheckoutAction.objects.invoice,
         content_object=SalesLedgerFactory(),
     )
-    CheckoutInvoiceFactory(
+    CheckoutAdditionalFactory(
         checkout=checkout,
         company_name='KB',
         email='test@pkimber.net',

@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from checkout.models import (
     Checkout,
-    CheckoutInvoice,
+    CheckoutAdditional,
     CheckoutSettings,
     Customer,
     ObjectPaymentPlan,
@@ -40,10 +40,10 @@ class CheckoutFactory(factory.django.DjangoModelFactory):
     checkout_date = timezone.now()
 
 
-class CheckoutInvoiceFactory(factory.django.DjangoModelFactory):
+class CheckoutAdditionalFactory(factory.django.DjangoModelFactory):
 
     class Meta:
-        model = CheckoutInvoice
+        model = CheckoutAdditional
 
     checkout = factory.SubFactory(CheckoutFactory)
 

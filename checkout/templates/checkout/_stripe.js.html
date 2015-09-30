@@ -2,7 +2,7 @@
 <script src="https://checkout.stripe.com/checkout.js"></script>
 <script>
 
-    function displayInvoiceSection() {
+    function displayAdditionalSection() {
         var action_data = {{ action_data|safe }};
         // only hide invoice fields if 'invoice' is an available option
         if (action_data['invoice']) {
@@ -18,7 +18,7 @@
                 // pass
             } else {
                 /* This function must be defined in your own project. */
-                showHideInvoiceSection(display);
+                showHideAdditionalSection(display);
             }
         }
     }
@@ -26,10 +26,10 @@
     $(function(){
         // show or hide the invoice section
         $('#id_checkout_form input[type=radio]').change(function () {
-            displayInvoiceSection();
+            displayAdditionalSection();
         });
         // initialise
-        displayInvoiceSection();
+        displayAdditionalSection();
     });
 
     var handler = StripeCheckout.configure({

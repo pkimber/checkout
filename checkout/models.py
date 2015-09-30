@@ -619,7 +619,7 @@ class Checkout(TimeStampedModel):
                 data.email,
                 data.phone,
             ))
-        except CheckoutInvoice.DoesNotExist:
+        except CheckoutAdditional.DoesNotExist:
             return []
 
     @property
@@ -686,15 +686,15 @@ class Checkout(TimeStampedModel):
 reversion.register(Checkout)
 
 
-class CheckoutInvoiceManager(models.Manager):
+class CheckoutAdditionalManager(models.Manager):
 
-    def create_checkout_invoice(self, checkout, **kwargs):
+    def create_checkout_additional(self, checkout, **kwargs):
         obj = self.model(checkout=checkout, **kwargs)
         obj.save()
         return obj
 
 
-class CheckoutInvoice(TimeStampedModel):
+class CheckoutAdditional(TimeStampedModel):
     """If a user decides to pay by invoice, there are the details.
 
     Links with the 'CheckoutForm' in ``checkout/forms.py``.  Probably easier to
@@ -716,17 +716,18 @@ class CheckoutInvoice(TimeStampedModel):
     contact_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField(blank=False)
     phone = models.CharField(max_length=50, blank=True)
-    objects = CheckoutInvoiceManager()
+    date_of_birth = models.DateField(}
+    objects = CheckoutAdditionalManager()
 
     class Meta:
         ordering = ('email',)
-        verbose_name = 'Checkout Invoice'
-        verbose_name_plural = 'Checkout Invoices'
+        verbose_name = 'Checkout Additional Information'
+        verbose_name_plural = 'Checkout Additional Information'
 
     def __str__(self):
         return '{}'.format(self.email)
 
-reversion.register(CheckoutInvoice)
+reversion.register(CheckoutAdditional)
 
 
 class PaymentPlanManager(models.Manager):
